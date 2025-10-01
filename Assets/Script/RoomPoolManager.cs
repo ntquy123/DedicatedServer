@@ -328,7 +328,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         if (_currentOnlinePlayers >= _maxConcurrentPlayers)
         {
             Debug.LogError("quá tải server");
-            request.Refuse(NetConnectFailedReason.ServerFull);
+            request.Refuse();
             return;
         }
 
