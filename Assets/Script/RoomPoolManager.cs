@@ -181,7 +181,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             Address = NetAddress.CreateFromIpPort("0.0.0.0", port),
             SceneManager = sceneManager,
             PlayerCount = _maxPlayersPerRoom,
-            CustomPhotonAppSettings = _customPhotonSettings
+            //CustomPhotonAppSettings = _customPhotonSettings
         };
 
         var startTask = runner.StartGame(args);

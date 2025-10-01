@@ -184,7 +184,7 @@ public class QuickMatchClient : NetworkBehaviour
         var args = new StartGameArgs
         {
             GameMode = GameMode.Client,
-            SessionInfo = info
+           // SessionName = info
         };
 
         Runner.StartGame(args);

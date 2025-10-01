@@ -63,7 +63,9 @@
   <ItemGroup>
     <Compile Include="Assets\Script\GameSessionNetworker_Server.cs" />
     <Compile Include="Assets\Script\ServerLauncher.cs" />
+    <Compile Include="Assets\Script\QuickMatchClient.cs" />
     <Compile Include="Assets\Script\Enum.cs" />
+    <Compile Include="Assets\Script\RoomPoolManager.cs" />
     <Compile Include="Assets\Script\Model\Player.cs" />
   </ItemGroup>
   <ItemGroup>
