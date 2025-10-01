@@ -199,14 +199,24 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             yield return null;
         }
 
-        runner.RemoveCallbacks(this);
-        AdjustOnlinePlayerCount(-entry.PlayerCount);
+        RoomEntry? cleanupEntry = null;
 
-        _rooms.Remove(runner);
+        if (runner && _rooms.TryGetValue(runner, out var currentEntry))
+        {
+            runner.RemoveCallbacks(this);
+            AdjustOnlinePlayerCount(-currentEntry.PlayerCount);
+
+            _rooms.Remove(runner);
+            cleanupEntry = currentEntry;
+            Destroy(runner.gameObject);
+        }
+
         _shutdownInProgress.Remove(runner);
-        Destroy(runner.gameObject);
 
-        LogPoolStatus($"Room '{entry.Name}' shut down");
+        if (cleanupEntry != null)
+        {
+            LogPoolStatus($"Room '{cleanupEntry.Name}' shut down");
+        }
 
         if (_topUpRoutine == null)
         {
@@ -301,6 +311,11 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
     public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason)
     {
+        if (_shutdownInProgress.Contains(runner))
+        {
+            return;
+        }
+
         if (_rooms.Remove(runner, out var entry))
         {
             AdjustOnlinePlayerCount(-entry.PlayerCount);
