@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Fusion;
 using Fusion.Photon.Realtime;
+using Fusion.Sockets;
 using UnityEngine;
 
 public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
@@ -19,6 +20,11 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
     private readonly Dictionary<NetworkRunner, RoomEntry> _rooms = new();
     private readonly HashSet<NetworkRunner> _shutdownInProgress = new();
+
+    [SerializeField]
+    private int _maxConcurrentPlayers = 18;
+
+    private int _currentOnlinePlayers;
 
     private AppSettings _customPhotonSettings = null!;
     private ushort _basePort;
@@ -47,6 +53,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         _roomPrefix = string.IsNullOrWhiteSpace(roomPrefix) ? "Room" : roomPrefix;
         _rooms.Clear();
         _shutdownInProgress.Clear();
+        _currentOnlinePlayers = 0;
         _nextPortOffset = 0;
 
         Debug.Log($"🏁 RoomPoolManager.InitialisePool() with basePort={_basePort}, targetEmptyRooms={_targetEmptyRooms}, idleShutdown={_idleShutdownSeconds}s");
@@ -193,6 +200,8 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         }
 
         runner.RemoveCallbacks(this);
+        AdjustOnlinePlayerCount(-entry.PlayerCount);
+
         _rooms.Remove(runner);
         _shutdownInProgress.Remove(runner);
         Destroy(runner.gameObject);
@@ -248,6 +257,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
         _rooms.Clear();
         _shutdownInProgress.Clear();
+        _currentOnlinePlayers = 0;
     }
 
     #region INetworkRunnerCallbacks
@@ -255,7 +265,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     {
         if (_rooms.TryGetValue(runner, out var entry))
         {
-            entry.PlayerCount = runner.ActivePlayers.Count();
+            UpdateRoomPlayerCount(entry, runner.ActivePlayers.Count());
             Debug.Log($"👥 Player joined room '{entry.Name}'. Count={entry.PlayerCount}");
             if (entry.PlayerCount >= _maxPlayersPerRoom)
             {
@@ -273,7 +283,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     {
         if (_rooms.TryGetValue(runner, out var entry))
         {
-            entry.PlayerCount = Math.Max(0, runner.ActivePlayers.Count());
+            UpdateRoomPlayerCount(entry, Math.Max(0, runner.ActivePlayers.Count()));
             if (entry.PlayerCount == 0)
             {
                 entry.LastEmptyUtc = DateTime.UtcNow;
@@ -293,6 +303,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     {
         if (_rooms.Remove(runner, out var entry))
         {
+            AdjustOnlinePlayerCount(-entry.PlayerCount);
             Debug.LogWarning($"⚠️ Runner for room '{entry.Name}' shutdown due to {shutdownReason}");
             Destroy(runner.gameObject);
             _shutdownInProgress.Remove(runner);
@@ -314,6 +325,14 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
     public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token)
     {
+        if (_currentOnlinePlayers >= _maxConcurrentPlayers)
+        {
+            Debug.LogError("quá tải server");
+            request.Refuse(NetConnectFailedReason.ServerFull);
+            return;
+        }
+
+        request.Accept();
     }
 
     public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason)
@@ -376,4 +395,27 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     {
     }
     #endregion
+
+    private void UpdateRoomPlayerCount(RoomEntry entry, int newCount)
+    {
+        var previous = entry.PlayerCount;
+        entry.PlayerCount = newCount;
+
+        var delta = newCount - previous;
+        if (delta != 0)
+        {
+            AdjustOnlinePlayerCount(delta);
+        }
+    }
+
+    private void AdjustOnlinePlayerCount(int delta)
+    {
+        if (delta == 0)
+        {
+            return;
+        }
+
+        _currentOnlinePlayers = Mathf.Max(0, _currentOnlinePlayers + delta);
+        Debug.Log($"🌐 Total online players: {_currentOnlinePlayers}");
+    }
 }
