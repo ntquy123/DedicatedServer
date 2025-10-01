@@ -3,7 +3,8 @@ using Fusion;
 using Fusion.Sockets;
 using System.Linq;
 using System;
- 
+using Fusion.Photon.Realtime;
+
 
 public class ServerLauncher : MonoBehaviour
 {
@@ -32,29 +33,53 @@ public class ServerLauncher : MonoBehaviour
         // In config để xác nhận thông tin bind thực tế
         Debug.Log("🧪 Khởi tạo StartGame với địa chỉ: 0.0.0.0" + ":" + port);
 
-        var result = await runner.StartGame(new StartGameArgs
+        //var result = await runner.StartGame(new StartGameArgs
+        //{
+        //    GameMode = GameMode.Server,
+        //    //Address = NetAddress.CreateFromIpPort("103.12.77.207", port),
+        //    Address = NetAddress.CreateFromIpPort("0.0.0.0", port),
+        //    SessionName = roomName,
+        //    SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
+        //});
+        var customSettings = PhotonAppSettings.Global.AppSettings.GetCopy();
+        customSettings.FixedRegion = "asia";
+        customSettings.AppVersion = PhotonAppSettings.Global.AppSettings.AppVersion;
+        Debug.Log($"🌍 Sử dụng region: {customSettings.FixedRegion}");
+ 
+        var args = new StartGameArgs
         {
+            SessionName = roomName, // ✅ cần nhớ tên này
             GameMode = GameMode.Server,
-            //Address = NetAddress.CreateFromIpPort("103.12.77.207", port),
-            Address = NetAddress.CreateFromIpPort("0.0.0.0", port),
-            SessionName = roomName,
-            SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
-        });
+            MatchmakingMode = MatchmakingMode.FillRoom,
+            EnableClientSessionCreation = true,
+            // SessionName = string.empty,
+            SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>(),
+            PlayerCount = 3,
+            CustomPhotonAppSettings = customSettings
+            //SessionProperties = new Dictionary<string, SessionProperty>
+            //{
+            //    { "level", (SessionProperty)myLevel }
+            //}
+        };
+        var startTask = runner.StartGame(args);
+        while (!startTask.IsCompleted)
+            yield return null;
 
-        // In lại thông tin bind thực tế
-        Debug.Log($"📡 Requested bind address: 0.0.0.0:{port}");
-
-
-        if (result.Ok)
+        if (!startTask.Result.Ok)
         {
-            Debug.Log($"✅ Fusion Server đã khởi động cho phòng: {roomName} (port: {port})");
-            var obj = runner.Spawn(networkManagerPrefab, Vector3.zero, Quaternion.identity);
-            Debug.Log("✅ Spawned NetworkManager with RPC");
+            Debug.LogError($"❌ StartGame failed: {startTask.Result.ShutdownReason}");
         }
-        else
-        {
-            Debug.LogError($"❌ StartGame failed: {result.ShutdownReason}");
-        }
+            // In lại thông tin bind thực tế
+            Debug.Log($"📡 Requested bind address: 0.0.0.0:{port}");
+
+
+        //if (startTask.Result.Ok)
+        //{
+        //    Debug.Log($"✅ Fusion Server đã khởi động cho phòng: {roomName} (port: {port})");
+        //    var obj = runner.Spawn(networkManagerPrefab, Vector3.zero, Quaternion.identity);
+        //    Debug.Log("✅ Spawned NetworkManager with RPC");
+        //}
+ 
     }
 
 
