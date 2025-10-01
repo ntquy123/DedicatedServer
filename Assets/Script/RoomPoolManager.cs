@@ -319,7 +319,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     {
     }
 
-    public void OnDisconnectedFromServer(NetworkRunner runner)
+    public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason)
     {
     }
 
@@ -355,7 +355,11 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     {
     }
 
-    public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ArraySegment<byte> data)
+    public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data)
+    {
+    }
+
+    public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress)
     {
     }
 
