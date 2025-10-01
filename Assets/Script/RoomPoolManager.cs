@@ -71,7 +71,25 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             return;
         }
 
+        var roomCount = _rooms.Count;
+        var anyRoomHasPlayers = false;
+
+        foreach (var entry in _rooms.Values)
+        {
+            if (entry.PlayerCount > 0)
+            {
+                anyRoomHasPlayers = true;
+                break;
+            }
+        }
+
+        if (roomCount <= _targetEmptyRooms || anyRoomHasPlayers)
+        {
+            return;
+        }
+
         var emptyRooms = new List<NetworkRunner>();
+        var utcNow = DateTime.UtcNow;
 
         foreach (var kvp in _rooms)
         {
@@ -79,7 +97,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
             if (entry.PlayerCount == 0)
             {
-                var idleSeconds = (DateTime.UtcNow - entry.LastEmptyUtc).TotalSeconds;
+                var idleSeconds = (utcNow - entry.LastEmptyUtc).TotalSeconds;
                 if (_idleShutdownSeconds > 0 && idleSeconds >= _idleShutdownSeconds)
                 {
                     emptyRooms.Add(entry.Runner);
