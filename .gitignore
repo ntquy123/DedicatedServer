@@ -1,0 +1,65 @@
+# This .gitignore file should be placed at the root of your Unity project directory
+#
+# Get latest from https://github.com/github/gitignore/blob/main/Unity.gitignore
+#
+
+# 💾 Loại bỏ thư mục Unity tự tạo (Rất nặng, không cần đẩy lên Git)
+.utmp/
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+
+# ✅ Giữ lại ProjectSettings/ (Cấu hình quan trọng của Unity)
+!ProjectSettings/
+
+# ✅ Giữ lại Packages/ (Quản lý package của Unity)
+!Packages/
+# Bỏ qua toàn bộ thư mục dữ liệu nhiều
+Assets/Models
+Assets/AddressableAsset/
+Assets/Firebase/
+Assets/Plugins/
+Assets/GeneratedLocalRepo/
+# 🔄 Loại bỏ file tạm thời
+MemoryCaptures/
+Recordings/
+ExportedObj/
+.consulo/
+*.tmp
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.opendb
+*.VC.db
+
+# 🖥️ Loại bỏ file cấu hình & cache IDE (Visual Studio, JetBrains Rider, etc.)
+.vs/
+.gradle/
+Assets/Plugins/Editor/JetBrains*
+
+# 🚀 Loại bỏ file build & export game
+*.apk
+*.aab
+*.unitypackage
+*.unitypackage.meta
+*.app
+
+# 🛠️ Loại bỏ file crash report & debug
+sysinfo.txt
+crashlytics-build.properties
+
+# 🔧 Loại bỏ Packed Addressables & file tạm Addressables
+Assets/AddressableAssetsData/*/*.bin*
+
+# 📂 Loại bỏ file tạm trong StreamingAssets
+Assets/StreamingAssets/aa.meta
+Assets/StreamingAssets/aa/*
+ServerData/
+*.db

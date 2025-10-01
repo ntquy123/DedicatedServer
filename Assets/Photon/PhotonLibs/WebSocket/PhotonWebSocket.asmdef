@@ -1,0 +1,17 @@
+{
+    "name": "PhotonWebSocket",
+    "rootNamespace": "",
+    "references": [],
+    "includePlatforms": [
+        "LinuxStandalone64",
+        "WebGL"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
