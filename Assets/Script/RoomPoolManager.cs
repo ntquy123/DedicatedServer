@@ -9,6 +9,8 @@ using UnityEngine;
 
 public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 {
+    public static RoomPoolManager? Instance { get; private set; }
+
     [SerializeField]
     private int _targetEmptyRooms = 3;
 
@@ -20,6 +22,8 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
     private readonly Dictionary<NetworkRunner, RoomEntry> _rooms = new();
     private readonly HashSet<NetworkRunner> _shutdownInProgress = new();
+    private readonly Queue<PlayerRef> _quickMatchQueue = new();
+    private readonly HashSet<PlayerRef> _queuedQuickMatchPlayers = new();
 
     [SerializeField]
     private int _maxConcurrentPlayers = 18;
@@ -42,6 +46,17 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         public int PlayerCount;
         public DateTime LastEmptyUtc;
         public ushort Port;
+        public bool IsReserved;
+    }
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning("⚠️ Multiple RoomPoolManager instances detected. Replacing the previous instance.");
+        }
+
+        Instance = this;
     }
 
     public IEnumerator InitialisePool(AppSettings photonSettings, ushort basePort, string roomPrefix)
@@ -275,6 +290,11 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
     private void OnDestroy()
     {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+
         foreach (var runner in _rooms.Keys.ToList())
         {
             runner.RemoveCallbacks(this);
@@ -288,11 +308,99 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         _currentOnlinePlayers = 0;
     }
 
+    internal bool TryEnqueueQuickMatchPlayer(PlayerRef player, out SessionInfo sessionInfo, out List<PlayerRef> players)
+    {
+        sessionInfo = default;
+        players = new List<PlayerRef>();
+
+        if (!_initialised)
+        {
+            return false;
+        }
+
+        if (!_queuedQuickMatchPlayers.Add(player))
+        {
+            return false;
+        }
+
+        _quickMatchQueue.Enqueue(player);
+
+        if (_topUpRoutine == null && CountEmptyRooms() == 0)
+        {
+            _topUpRoutine = StartCoroutine(TopUpRoomsCoroutine());
+        }
+
+        return TryDequeueQuickMatchGroup(out sessionInfo, out players);
+    }
+
+    internal void RequeueQuickMatchPlayers(IEnumerable<PlayerRef> players)
+    {
+        foreach (var player in players)
+        {
+            if (_queuedQuickMatchPlayers.Add(player))
+            {
+                _quickMatchQueue.Enqueue(player);
+            }
+        }
+    }
+
+    internal bool TryAllocateQuickMatchGroup(out SessionInfo sessionInfo, out List<PlayerRef> players)
+    {
+        return TryDequeueQuickMatchGroup(out sessionInfo, out players);
+    }
+
+    private bool TryDequeueQuickMatchGroup(out SessionInfo sessionInfo, out List<PlayerRef> players)
+    {
+        sessionInfo = default;
+        players = new List<PlayerRef>();
+
+        if (_quickMatchQueue.Count < _maxPlayersPerRoom)
+        {
+            return false;
+        }
+
+        var availableRoom = _rooms.Values.FirstOrDefault(r => r.PlayerCount == 0 && !r.IsReserved);
+        if (availableRoom == null)
+        {
+            return false;
+        }
+
+        sessionInfo = availableRoom.Runner.SessionInfo;
+        availableRoom.IsReserved = true;
+
+        for (int i = 0; i < _maxPlayersPerRoom && _quickMatchQueue.Count > 0; i++)
+        {
+            var queuedPlayer = _quickMatchQueue.Dequeue();
+            _queuedQuickMatchPlayers.Remove(queuedPlayer);
+            players.Add(queuedPlayer);
+        }
+
+        return players.Count == _maxPlayersPerRoom;
+    }
+
+    internal void ReleaseQuickMatchReservation(SessionInfo sessionInfo)
+    {
+        if (!sessionInfo.IsValid)
+        {
+            return;
+        }
+
+        foreach (var entry in _rooms.Values)
+        {
+            if (entry.Runner.SessionInfo.Name == sessionInfo.Name)
+            {
+                entry.IsReserved = false;
+                return;
+            }
+        }
+    }
+
     #region INetworkRunnerCallbacks
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
         if (_rooms.TryGetValue(runner, out var entry))
         {
+            entry.IsReserved = false;
             UpdateRoomPlayerCount(entry, runner.ActivePlayers.Count());
             Debug.Log($"👥 Player joined room '{entry.Name}'. Count={entry.PlayerCount}");
             if (entry.PlayerCount >= _maxPlayersPerRoom)
