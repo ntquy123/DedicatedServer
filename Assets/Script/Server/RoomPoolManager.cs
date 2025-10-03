@@ -367,7 +367,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             if (quickMatchInstance != null)
             {
                 quickMatchInstance.gameObject.name = $"Room_{entry.Index}_{roomName}";
-                quickMatchInstance.transform.SetParent(go.transform, false);
+                quickMatchInstance.transform.SetParent(null);
             }
 
             _rooms[runner] = entry;
