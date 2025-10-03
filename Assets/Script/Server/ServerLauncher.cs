@@ -61,6 +61,19 @@ public class ServerLauncher : MonoBehaviour
 
         yield return _roomPoolManager.InitialisePool(customSettings, basePort, roomPrefix);
 
+        var stats = _roomPoolManager.GetStatisticsSnapshot();
+        var statusLines = new[]
+        {
+            "🎮🔥 SERVER GAME BAN CULI DASHBOARD 🔥🎮",
+            "==============================",
+            $"📡 Photon Region : {(!string.IsNullOrWhiteSpace(stats.PhotonRegion) ? stats.PhotonRegion : "n/a")}",
+            $"👥 Online Players: {stats.TotalOnlinePlayers}",
+            $"🏠 Total Rooms    : {stats.TotalRooms}",
+            $"🎯 Rooms Occupied : {stats.OccupiedRooms}",
+            $"🚀 Rooms At Cap   : {stats.FullRooms}",
+        };
+
+        Debug.Log(string.Join(Environment.NewLine, statusLines));
         Debug.Log("✅ Dedicated server room pool initialised successfully.");
     }
 

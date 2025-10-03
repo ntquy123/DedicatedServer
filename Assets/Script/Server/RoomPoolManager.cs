@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Fusion;
 using Fusion.Photon.Realtime;
 using Fusion.Sockets;
@@ -25,6 +26,24 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     private readonly Queue<PlayerRef> _quickMatchQueue = new();
     private readonly HashSet<PlayerRef> _queuedQuickMatchPlayers = new();
     private readonly Dictionary<NetworkRunner, QuickMatchServerCallbacks> _quickMatchServerCallbacks = new();
+
+    public readonly struct RoomPoolStatistics
+    {
+        public RoomPoolStatistics(string photonRegion, int totalOnlinePlayers, int totalRooms, int occupiedRooms, int fullRooms)
+        {
+            PhotonRegion = photonRegion;
+            TotalOnlinePlayers = totalOnlinePlayers;
+            TotalRooms = totalRooms;
+            OccupiedRooms = occupiedRooms;
+            FullRooms = fullRooms;
+        }
+
+        public string PhotonRegion { get; }
+        public int TotalOnlinePlayers { get; }
+        public int TotalRooms { get; }
+        public int OccupiedRooms { get; }
+        public int FullRooms { get; }
+    }
 
     [SerializeField]
     private int _maxConcurrentPlayers = 18;
@@ -83,6 +102,38 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         }
 
         Instance = this;
+    }
+
+    public RoomPoolStatistics GetStatisticsSnapshot()
+    {
+        var photonRegion = _customPhotonSettings?.FixedRegion ?? string.Empty;
+        var totalOnlinePlayers = Volatile.Read(ref _currentOnlinePlayers);
+
+        int totalRooms;
+        int occupiedRooms;
+        int fullRooms;
+
+        lock (_rooms)
+        {
+            totalRooms = _rooms.Count;
+            occupiedRooms = 0;
+            fullRooms = 0;
+
+            foreach (var entry in _rooms.Values)
+            {
+                if (entry.PlayerCount > 0)
+                {
+                    occupiedRooms++;
+                }
+
+                if (entry.PlayerCount >= _maxPlayersPerRoom)
+                {
+                    fullRooms++;
+                }
+            }
+        }
+
+        return new RoomPoolStatistics(photonRegion, totalOnlinePlayers, totalRooms, occupiedRooms, fullRooms);
     }
 
     public IEnumerator InitialisePool(AppSettings photonSettings, ushort basePort, string roomPrefix)
