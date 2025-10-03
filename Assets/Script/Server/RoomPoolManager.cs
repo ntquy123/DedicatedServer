@@ -303,11 +303,11 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             Debug.LogWarning("Quick match client prefab has not been assigned for server runners.");
         }
 
-        var objectProvider = runner.GetComponent<INetworkObjectProvider>();
-        if (objectProvider == null)
-        {
-            objectProvider = go.AddComponent<NetworkObjectProviderDefault>();
-        }
+        //var objectProvider = runner.GetComponent<INetworkObjectProvider>();
+        //if (objectProvider == null)
+        //{
+        //    objectProvider = go.AddComponent<NetworkObjectProviderDefault>();
+        //}
         var customSettings = PhotonAppSettings.Global.AppSettings.GetCopy();
         customSettings.FixedRegion = "asia";
         customSettings.AppVersion = PhotonAppSettings.Global.AppSettings.AppVersion;
@@ -316,7 +316,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         {
             GameMode = GameMode.Server,
             SessionName = roomName,
-            CustomLobbyName = "DefaultLobby",
+            //CustomLobbyName = "DefaultLobby",
             // Server lắng nghe trên tất cả các interface nội bộ
             Address = NetAddress.CreateFromIpPort("0.0.0.0", port),
             // Server báo cáo địa chỉ công cộng cho Client kết nối trên VPS
@@ -324,7 +324,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             SceneManager = sceneManager,
             PlayerCount = _maxPlayersPerRoom,
             CustomPhotonAppSettings = customSettings,
-            ObjectProvider = objectProvider
+            //ObjectProvider = objectProvider
         };
 
         var startTask = runner.StartGame(args);

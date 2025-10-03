@@ -148,7 +148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bae5cf40a203214bb03f7e6c304b27b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _targetEmptyRooms: 3
+  _targetEmptyRooms: 2
   _maxPlayersPerRoom: 3
   _idleShutdownSeconds: 180
   _serverConfig: {fileID: 11400000, guid: 8d6e29d65bbadc94f8282a889c88f3f5, type: 2}
