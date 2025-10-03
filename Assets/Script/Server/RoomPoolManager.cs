@@ -303,6 +303,12 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             Debug.LogWarning("Quick match client prefab has not been assigned for server runners.");
         }
 
+        var objectProvider = runner.GetComponent<INetworkObjectProvider>();
+        if (objectProvider == null)
+        {
+            objectProvider = go.AddComponent<NetworkObjectProviderDefault>();
+        }
+
         var args = new StartGameArgs
         {
             GameMode = GameMode.Server,
@@ -314,7 +320,8 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             //CustomPublicAddress = NetAddress.CreateFromIpPort(_resolvedPublicIpAddress, port),
             SceneManager = sceneManager,
             PlayerCount = _maxPlayersPerRoom,
-            CustomPhotonAppSettings = _customPhotonSettings
+            CustomPhotonAppSettings = _customPhotonSettings,
+            ObjectProvider = objectProvider
         };
 
         var startTask = runner.StartGame(args);
