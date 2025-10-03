@@ -6,6 +6,11 @@ using UnityEngine;
 
 public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
 {
+    private void Awake()
+    {
+        DontDestroyOnLoad(gameObject);
+    }
+
     [SerializeField]
     private NetworkObject? _quickMatchClientInstance;
 
@@ -53,8 +58,21 @@ public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
         try
         {
             controllerObject = runner.Spawn(_playerControllerPrefab, Vector3.zero, Quaternion.identity, player);
+
             if (controllerObject != null)
+            {
+                DontDestroyOnLoad(controllerObject.gameObject);
+                try
+                {
+                    runner.MakeDontDestroyOnLoad(controllerObject.gameObject);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"⚠️ Unable to mark player controller as DontDestroyOnLoad via runner: {ex.Message}");
+                }
+
                 Debug.Log($"{player} Vào phòng thành công. đã spawn xong input điều khiển");
+            }
         }
         catch (Exception ex)
         {
