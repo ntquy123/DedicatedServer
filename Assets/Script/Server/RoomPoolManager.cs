@@ -308,6 +308,9 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         {
             objectProvider = go.AddComponent<NetworkObjectProviderDefault>();
         }
+        var customSettings = PhotonAppSettings.Global.AppSettings.GetCopy();
+        customSettings.FixedRegion = "asia";
+        customSettings.AppVersion = PhotonAppSettings.Global.AppSettings.AppVersion;
 
         var args = new StartGameArgs
         {
@@ -320,7 +323,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             //CustomPublicAddress = NetAddress.CreateFromIpPort(_resolvedPublicIpAddress, port),
             SceneManager = sceneManager,
             PlayerCount = _maxPlayersPerRoom,
-            CustomPhotonAppSettings = _customPhotonSettings as FusionAppSettings ?? new FusionAppSettings { AppSettings = _customPhotonSettings },
+            CustomPhotonAppSettings = customSettings,
             ObjectProvider = objectProvider
         };
 
