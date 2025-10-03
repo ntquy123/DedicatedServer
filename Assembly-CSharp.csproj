@@ -64,6 +64,7 @@
     <Compile Include="Assets\Script\Server\QuickMatchServerCallbacks.cs" />
     <Compile Include="Assets\Script\Core\PlayerNetworkController.cs" />
     <Compile Include="Assets\Script\Core\QuickMatchClient.cs" />
+    <Compile Include="Assets\Script\Server\ServerConfig.cs" />
     <Compile Include="Assets\Script\Server\RoomPoolManager.cs" />
     <Compile Include="Assets\Script\Server\ServerLauncher.cs" />
   </ItemGroup>

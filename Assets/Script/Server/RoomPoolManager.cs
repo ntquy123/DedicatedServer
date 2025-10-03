@@ -304,7 +304,10 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         {
             GameMode = GameMode.Server,
             SessionName = roomName,
-            Address = NetAddress.CreateFromIpPort(_resolvedPublicIpAddress, port),
+            // Server lắng nghe trên tất cả các interface nội bộ
+            Address = NetAddress.CreateFromIpPort("0.0.0.0", port),
+            // Server báo cáo địa chỉ công cộng cho Client kết nối trên VPS
+            CustomPublicAddress = NetAddress.CreateFromIpPort(_resolvedPublicIpAddress, port),
             SceneManager = sceneManager,
             PlayerCount = _maxPlayersPerRoom,
             //CustomPhotonAppSettings = _customPhotonSettings
