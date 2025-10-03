@@ -320,7 +320,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             //CustomPublicAddress = NetAddress.CreateFromIpPort(_resolvedPublicIpAddress, port),
             SceneManager = sceneManager,
             PlayerCount = _maxPlayersPerRoom,
-            CustomPhotonAppSettings = _customPhotonSettings,
+            CustomPhotonAppSettings = _customPhotonSettings as FusionAppSettings ?? new FusionAppSettings { AppSettings = _customPhotonSettings },
             ObjectProvider = objectProvider
         };
 
