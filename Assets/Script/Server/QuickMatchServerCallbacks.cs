@@ -54,7 +54,7 @@ public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
         {
             controllerObject = runner.Spawn(_playerControllerPrefab, Vector3.zero, Quaternion.identity, player);
             if (controllerObject != null)
-                Debug.Log("Vào phòng thành công. đã spawn xong input điều khiển cho user");
+                Debug.Log($"{player} Vào phòng thành công. đã spawn xong input điều khiển");
         }
         catch (Exception ex)
         {
