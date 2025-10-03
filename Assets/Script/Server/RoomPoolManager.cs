@@ -399,48 +399,62 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             yield break;
         }
 
+        var runnerToShutdown = entry.Runner;
+        QuickMatchServerCallbacks? quickMatchCallbacks = null;
+
+        if (_quickMatchServerCallbacks.TryGetValue(runnerToShutdown, out var storedCallbacks))
+        {
+            quickMatchCallbacks = storedCallbacks;
+            _quickMatchServerCallbacks.Remove(runnerToShutdown);
+        }
+
+        _rooms.Remove(runnerToShutdown);
+        _shutdownInProgress.Remove(runnerToShutdown);
+
         Debug.Log($"♻️ Shutting down idle room '{entry.Name}' on port {entry.Port}");
 
-        if (entry.QuickMatchClientInstance != null && entry.QuickMatchClientInstance.IsValid)
+        if (entry.QuickMatchClientInstance != null && entry.QuickMatchClientInstance.IsValid && runnerToShutdown)
         {
-            runner.Despawn(entry.QuickMatchClientInstance);
+            runnerToShutdown.Despawn(entry.QuickMatchClientInstance);
             entry.QuickMatchClientInstance = null;
         }
 
-        var shutdownTask = runner.Shutdown();
-
-        while (!shutdownTask.IsCompleted)
+        if (runnerToShutdown)
         {
-            yield return null;
-        }
+            var shutdownTask = runnerToShutdown.Shutdown();
 
-        RoomEntry? cleanupEntry = null;
-
-        if (runner && _rooms.TryGetValue(runner, out var currentEntry))
-        {
-            runner.RemoveCallbacks(this);
-            if (_quickMatchServerCallbacks.TryGetValue(runner, out var quickMatchCallbacks))
+            while (!shutdownTask.IsCompleted)
             {
-                runner.RemoveCallbacks(quickMatchCallbacks);
-                _quickMatchServerCallbacks.Remove(runner);
-                if (quickMatchCallbacks)
-                {
-                    Destroy(quickMatchCallbacks);
-                }
+                yield return null;
             }
-            AdjustOnlinePlayerCount(-currentEntry.PlayerCount);
-
-            _rooms.Remove(runner);
-            cleanupEntry = currentEntry;
-            Destroy(runner.gameObject);
         }
 
-        _shutdownInProgress.Remove(runner);
-
-        if (cleanupEntry != null)
+        if (runnerToShutdown)
         {
-            LogPoolStatus($"Room '{cleanupEntry.Name}' shut down");
+            runnerToShutdown.RemoveCallbacks(this);
         }
+
+        if (quickMatchCallbacks != null)
+        {
+            if (runnerToShutdown)
+            {
+                runnerToShutdown.RemoveCallbacks(quickMatchCallbacks);
+            }
+
+            if (quickMatchCallbacks)
+            {
+                Destroy(quickMatchCallbacks);
+            }
+        }
+
+        AdjustOnlinePlayerCount(-entry.PlayerCount);
+
+        if (runnerToShutdown)
+        {
+            Destroy(runnerToShutdown.gameObject);
+        }
+
+        LogPoolStatus($"Room '{entry.Name}' shut down");
 
         if (_topUpRoutine == null)
         {
