@@ -10,19 +10,24 @@ public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
     private NetworkObject? _quickMatchClientInstance;
 
     [SerializeField]
+    private int _roomIndex = -1;
+
+    [SerializeField]
     private NetworkPrefabRef _playerControllerPrefab;
 
     private readonly Dictionary<PlayerRef, NetworkObject> _playerControllers = new();
 
     public NetworkObject? QuickMatchClientInstance => _quickMatchClientInstance;
+    public int RoomIndex => _roomIndex;
 
     public void SetPlayerControllerPrefab(NetworkPrefabRef prefab)
     {
         _playerControllerPrefab = prefab;
     }
 
-    public void Initialise(NetworkObject? instance)
+    public void Initialise(int roomIndex, NetworkObject? instance)
     {
+        _roomIndex = roomIndex;
         _quickMatchClientInstance = instance;
     }
 

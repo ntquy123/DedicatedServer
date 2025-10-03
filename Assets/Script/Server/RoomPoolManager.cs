@@ -60,6 +60,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     private bool _initialised;
     private bool _isCreatingRooms;
     private int _nextPortOffset;
+    private int _nextRoomIndex;
     private string _resolvedPublicIpAddress = "0.0.0.0";
 
     private Coroutine? _topUpRoutine;
@@ -72,6 +73,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
     private class RoomEntry
     {
+        public int Index { get; set; }
         public NetworkRunner Runner = null!;
         public string Name = string.Empty;
         public int PlayerCount;
@@ -154,6 +156,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         _shutdownInProgress.Clear();
         _currentOnlinePlayers = 0;
         _nextPortOffset = 0;
+        _nextRoomIndex = 0;
 
         Debug.Log($"🏁 RoomPoolManager.InitialisePool() with basePort={_basePort}, targetEmptyRooms={_targetEmptyRooms}, idleShutdown={_idleShutdownSeconds}s");
 
@@ -324,6 +327,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
         if (result.Ok)
         {
+            var roomIndex = _nextRoomIndex++;
             NetworkObject? quickMatchInstance = null;
 
             if (_quickMatchClientPrefab != null)
@@ -340,6 +344,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
             var entry = new RoomEntry
             {
+                Index = roomIndex,
                 Runner = runner,
                 Name = roomName,
                 PlayerCount = 0,
@@ -348,10 +353,16 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                 QuickMatchClientInstance = quickMatchInstance
             };
 
+            if (quickMatchInstance != null)
+            {
+                quickMatchInstance.gameObject.name = $"Room_{entry.Index}_{roomName}";
+                quickMatchInstance.transform.SetParent(go.transform, false);
+            }
+
             _rooms[runner] = entry;
             if (quickMatchCallbacks != null)
             {
-                quickMatchCallbacks.Initialise(quickMatchInstance);
+                quickMatchCallbacks.Initialise(entry.Index, quickMatchInstance);
                 _quickMatchServerCallbacks[runner] = quickMatchCallbacks;
             }
 
