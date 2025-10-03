@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using Fusion;
 using Fusion.Photon.Realtime;
@@ -20,6 +21,9 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
     [SerializeField]
     private float _idleShutdownSeconds = 180f;
+
+    [SerializeField]
+    private ServerConfig? _serverConfig;
 
     private readonly Dictionary<NetworkRunner, RoomEntry> _rooms = new();
     private readonly HashSet<NetworkRunner> _shutdownInProgress = new();
@@ -56,6 +60,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     private bool _initialised;
     private bool _isCreatingRooms;
     private int _nextPortOffset;
+    private string _resolvedPublicIpAddress = "0.0.0.0";
 
     private Coroutine? _topUpRoutine;
 
@@ -140,6 +145,8 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     {
         if (photonSettings == null) throw new ArgumentNullException(nameof(photonSettings));
 
+        ResolvePublicIpAddress();
+
         _customPhotonSettings = photonSettings;
         _basePort = basePort;
         _roomPrefix = string.IsNullOrWhiteSpace(roomPrefix) ? "Room" : roomPrefix;
@@ -154,6 +161,36 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
         _initialised = true;
         LogPoolStatus("Initial pool ready");
+    }
+
+    private void ResolvePublicIpAddress()
+    {
+        if (_serverConfig == null)
+        {
+            Debug.LogError("Server config asset is not assigned to RoomPoolManager. Defaulting public IP to 0.0.0.0.");
+            _resolvedPublicIpAddress = "0.0.0.0";
+            return;
+        }
+
+        var configuredIp = _serverConfig.PublicIpAddress;
+
+        if (string.IsNullOrWhiteSpace(configuredIp))
+        {
+            Debug.LogWarning("Public IP address is empty in the assigned ServerConfig. Defaulting to 0.0.0.0.");
+            _resolvedPublicIpAddress = "0.0.0.0";
+            return;
+        }
+
+        configuredIp = configuredIp.Trim();
+
+        if (!IPAddress.TryParse(configuredIp, out _))
+        {
+            Debug.LogError($"Invalid public IP address '{configuredIp}' configured in ServerConfig. Defaulting to 0.0.0.0.");
+            _resolvedPublicIpAddress = "0.0.0.0";
+            return;
+        }
+
+        _resolvedPublicIpAddress = configuredIp;
     }
 
     private void Update()
@@ -267,7 +304,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         {
             GameMode = GameMode.Server,
             SessionName = roomName,
-            Address = NetAddress.CreateFromIpPort("0.0.0.0", port),
+            Address = NetAddress.CreateFromIpPort(_resolvedPublicIpAddress, port),
             SceneManager = sceneManager,
             PlayerCount = _maxPlayersPerRoom,
             //CustomPhotonAppSettings = _customPhotonSettings

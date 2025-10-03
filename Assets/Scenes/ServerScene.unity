@@ -151,6 +151,7 @@ MonoBehaviour:
   _targetEmptyRooms: 3
   _maxPlayersPerRoom: 3
   _idleShutdownSeconds: 180
+  _serverConfig: {fileID: 11400000, guid: 8d6e29d65bbadc94f8282a889c88f3f5, type: 2}
   _maxConcurrentPlayers: 18
   _quickMatchClientPrefab: {fileID: 0}
   _quickMatchPlayerControllerPrefab:
