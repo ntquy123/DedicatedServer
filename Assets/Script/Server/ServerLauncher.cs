@@ -2,12 +2,19 @@ using UnityEngine;
 using System.Linq;
 using System;
 using System.Collections;
+using Fusion;
 using Fusion.Photon.Realtime;
 
 public class ServerLauncher : MonoBehaviour
 {
     [SerializeField]
     private RoomPoolManager? _roomPoolManager;
+
+    [SerializeField]
+    private NetworkObject? _quickMatchClientPrefab;
+
+    [SerializeField]
+    private NetworkPrefabRef _playerControllerPrefab;
 
     private void Awake()
     {
@@ -19,6 +26,12 @@ public class ServerLauncher : MonoBehaviour
         if (_roomPoolManager == null)
         {
             _roomPoolManager = gameObject.AddComponent<RoomPoolManager>();
+        }
+
+        if (_roomPoolManager != null)
+        {
+            _roomPoolManager.SetQuickMatchClientPrefab(_quickMatchClientPrefab);
+            _roomPoolManager.SetQuickMatchPlayerControllerPrefab(_playerControllerPrefab);
         }
     }
 

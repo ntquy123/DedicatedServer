@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +24,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     private readonly HashSet<NetworkRunner> _shutdownInProgress = new();
     private readonly Queue<PlayerRef> _quickMatchQueue = new();
     private readonly HashSet<PlayerRef> _queuedQuickMatchPlayers = new();
+    private readonly Dictionary<NetworkRunner, QuickMatchServerCallbacks> _quickMatchServerCallbacks = new();
 
     [SerializeField]
     private int _maxConcurrentPlayers = 18;
@@ -39,6 +40,12 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
     private Coroutine? _topUpRoutine;
 
+    [SerializeField]
+    private NetworkObject? _quickMatchClientPrefab;
+
+    [SerializeField]
+    private NetworkPrefabRef _quickMatchPlayerControllerPrefab;
+
     private class RoomEntry
     {
         public NetworkRunner Runner = null!;
@@ -47,6 +54,25 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         public DateTime LastEmptyUtc;
         public ushort Port;
         public bool IsReserved;
+        public NetworkObject? QuickMatchClientInstance;
+    }
+
+    public void SetQuickMatchClientPrefab(NetworkObject? prefab)
+    {
+        _quickMatchClientPrefab = prefab;
+    }
+
+    public void SetQuickMatchPlayerControllerPrefab(NetworkPrefabRef prefab)
+    {
+        _quickMatchPlayerControllerPrefab = prefab;
+
+        foreach (var callback in _quickMatchServerCallbacks.Values)
+        {
+            if (callback != null)
+            {
+                callback.SetPlayerControllerPrefab(prefab);
+            }
+        }
     }
 
     private void Awake()
@@ -174,6 +200,18 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
         runner.AddCallbacks(this);
 
+        QuickMatchServerCallbacks? quickMatchCallbacks = null;
+        if (_quickMatchClientPrefab != null)
+        {
+            quickMatchCallbacks = go.AddComponent<QuickMatchServerCallbacks>();
+            quickMatchCallbacks.SetPlayerControllerPrefab(_quickMatchPlayerControllerPrefab);
+            runner.AddCallbacks(quickMatchCallbacks);
+        }
+        else
+        {
+            Debug.LogWarning("Quick match client prefab has not been assigned for server runners.");
+        }
+
         var args = new StartGameArgs
         {
             GameMode = GameMode.Server,
@@ -195,16 +233,36 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
         if (result.Ok)
         {
+            NetworkObject? quickMatchInstance = null;
+
+            if (_quickMatchClientPrefab != null)
+            {
+                try
+                {
+                    quickMatchInstance = runner.Spawn(_quickMatchClientPrefab, Vector3.zero, Quaternion.identity);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"❌ Failed to spawn quick match client instance for room '{roomName}': {ex}");
+                }
+            }
+
             var entry = new RoomEntry
             {
                 Runner = runner,
                 Name = roomName,
                 PlayerCount = 0,
                 LastEmptyUtc = DateTime.UtcNow,
-                Port = port
+                Port = port,
+                QuickMatchClientInstance = quickMatchInstance
             };
 
             _rooms[runner] = entry;
+            if (quickMatchCallbacks != null)
+            {
+                quickMatchCallbacks.Initialise(quickMatchInstance);
+                _quickMatchServerCallbacks[runner] = quickMatchCallbacks;
+            }
 
             Debug.Log($"✅ Room '{roomName}' started on port {port}");
         }
@@ -212,6 +270,11 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         {
             Debug.LogError($"❌ Failed to start room '{roomName}': {result.ShutdownReason}");
             runner.RemoveCallbacks(this);
+            if (quickMatchCallbacks != null)
+            {
+                runner.RemoveCallbacks(quickMatchCallbacks);
+                Destroy(quickMatchCallbacks);
+            }
             Destroy(go);
         }
     }
@@ -225,6 +288,12 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
         Debug.Log($"♻️ Shutting down idle room '{entry.Name}' on port {entry.Port}");
 
+        if (entry.QuickMatchClientInstance != null && entry.QuickMatchClientInstance.IsValid)
+        {
+            runner.Despawn(entry.QuickMatchClientInstance);
+            entry.QuickMatchClientInstance = null;
+        }
+
         var shutdownTask = runner.Shutdown();
 
         while (!shutdownTask.IsCompleted)
@@ -237,6 +306,15 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         if (runner && _rooms.TryGetValue(runner, out var currentEntry))
         {
             runner.RemoveCallbacks(this);
+            if (_quickMatchServerCallbacks.TryGetValue(runner, out var quickMatchCallbacks))
+            {
+                runner.RemoveCallbacks(quickMatchCallbacks);
+                _quickMatchServerCallbacks.Remove(runner);
+                if (quickMatchCallbacks)
+                {
+                    Destroy(quickMatchCallbacks);
+                }
+            }
             AdjustOnlinePlayerCount(-currentEntry.PlayerCount);
 
             _rooms.Remove(runner);
@@ -297,7 +375,22 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
         foreach (var runner in _rooms.Keys.ToList())
         {
+            if (_rooms.TryGetValue(runner, out var entry) && entry.QuickMatchClientInstance != null && entry.QuickMatchClientInstance.IsValid)
+            {
+                runner.Despawn(entry.QuickMatchClientInstance);
+                entry.QuickMatchClientInstance = null;
+            }
+
             runner.RemoveCallbacks(this);
+            if (_quickMatchServerCallbacks.TryGetValue(runner, out var quickMatchCallbacks))
+            {
+                runner.RemoveCallbacks(quickMatchCallbacks);
+                _quickMatchServerCallbacks.Remove(runner);
+                if (quickMatchCallbacks)
+                {
+                    Destroy(quickMatchCallbacks);
+                }
+            }
             _shutdownInProgress.Remove(runner);
             runner.Shutdown();
             Destroy(runner.gameObject);
@@ -405,11 +498,13 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             Debug.Log($"👥 Player joined room '{entry.Name}'. Count={entry.PlayerCount}");
             if (entry.PlayerCount >= _maxPlayersPerRoom)
             {
-                Debug.Log($"🚪 Room '{entry.Name}' is full. Triggering pool top-up.");
-                if (_topUpRoutine == null)
-                {
-                    _topUpRoutine = StartCoroutine(TopUpRoomsCoroutine());
-                }
+                Debug.Log($"🚪 Room '{entry.Name}' is full.");
+            }
+
+            var emptyRoomCount = CountEmptyRooms();
+            if (_topUpRoutine == null && emptyRoomCount < _targetEmptyRooms)
+            {
+                _topUpRoutine = StartCoroutine(TopUpRoomsCoroutine());
             }
             LogPoolStatus($"Player joined {entry.Name}");
         }

@@ -61,12 +61,11 @@
     <Analyzer Include="D:\Unity\UnityEditor\6000.0.53f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Script\GameSessionNetworker_Server.cs" />
-    <Compile Include="Assets\Script\ServerLauncher.cs" />
-    <Compile Include="Assets\Script\QuickMatchClient.cs" />
-    <Compile Include="Assets\Script\Enum.cs" />
-    <Compile Include="Assets\Script\RoomPoolManager.cs" />
-    <Compile Include="Assets\Script\Model\Player.cs" />
+    <Compile Include="Assets\Script\Server\QuickMatchServerCallbacks.cs" />
+    <Compile Include="Assets\Script\Core\PlayerNetworkController.cs" />
+    <Compile Include="Assets\Script\Core\QuickMatchClient.cs" />
+    <Compile Include="Assets\Script\Server\RoomPoolManager.cs" />
+    <Compile Include="Assets\Script\Server\ServerLauncher.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Photon\PhotonLibs\netstandard2.0\Photon3Unity3D.xml" />
