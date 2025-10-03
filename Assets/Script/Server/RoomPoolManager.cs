@@ -346,6 +346,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                 try
                 {
                     quickMatchInstance = runner.Spawn(_quickMatchClientPrefab, Vector3.zero, Quaternion.identity);
+                    DontDestroyOnLoad(quickMatchInstance.gameObject);
                 }
                 catch (Exception ex)
                 {
