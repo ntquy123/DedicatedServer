@@ -15,20 +15,29 @@ public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
     [SerializeField]
     private NetworkPrefabRef _playerControllerPrefab;
 
+    [SerializeField]
+    private string _roomName = string.Empty;
+
+    private Transform? _roomRoot;
+
     private readonly Dictionary<PlayerRef, NetworkObject> _playerControllers = new();
 
     public NetworkObject? QuickMatchClientInstance => _quickMatchClientInstance;
     public int RoomIndex => _roomIndex;
+    public string RoomName => _roomName;
+    private Transform RoomRoot => _roomRoot != null ? _roomRoot : transform;
 
     public void SetPlayerControllerPrefab(NetworkPrefabRef prefab)
     {
         _playerControllerPrefab = prefab;
     }
 
-    public void Initialise(int roomIndex, NetworkObject? instance)
+    public void Initialise(int roomIndex, string roomName, NetworkObject? instance)
     {
         _roomIndex = roomIndex;
+        _roomName = roomName ?? string.Empty;
         _quickMatchClientInstance = instance;
+        _roomRoot = transform;
     }
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
@@ -61,6 +70,10 @@ public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
 
         runner.SetPlayerObject(player, controllerObject);
 
+        var playerLabel = DerivePlayerLabel(runner, player);
+        controllerObject.transform.SetParent(RoomRoot, worldPositionStays: false);
+        controllerObject.gameObject.name = $"{playerLabel}_Input";
+
         if (controllerObject.TryGetComponent(out PlayerNetworkController controller))
         {
             controller.AssignQuickMatchClient(_quickMatchClientInstance);
@@ -71,6 +84,32 @@ public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
         }
 
         _playerControllers[player] = controllerObject;
+    }
+
+    private string DerivePlayerLabel(NetworkRunner runner, PlayerRef player)
+    {
+        string? label = null;
+
+        try
+        {
+            label = runner.GetPlayerUserId(player);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"⚠️ Unable to read userId for player {player}: {ex.Message}");
+        }
+
+        if (string.IsNullOrWhiteSpace(label) && runner.TryGetPlayerObject(player, out var playerObject) && playerObject != null)
+        {
+            label = playerObject.name;
+        }
+
+        if (string.IsNullOrWhiteSpace(label))
+        {
+            label = player.PlayerId.ToString();
+        }
+
+        return label;
     }
 
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)

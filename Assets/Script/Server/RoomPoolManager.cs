@@ -362,7 +362,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             _rooms[runner] = entry;
             if (quickMatchCallbacks != null)
             {
-                quickMatchCallbacks.Initialise(entry.Index, quickMatchInstance);
+                quickMatchCallbacks.Initialise(entry.Index, entry.Name, quickMatchInstance);
                 _quickMatchServerCallbacks[runner] = quickMatchCallbacks;
             }
 
