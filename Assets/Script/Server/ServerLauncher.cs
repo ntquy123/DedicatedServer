@@ -11,7 +11,7 @@ public class ServerLauncher : MonoBehaviour
     private RoomPoolManager? _roomPoolManager;
 
     [SerializeField]
-    private NetworkObject? _quickMatchClientPrefab;
+    private NetworkPrefabRef _quickMatchClientPrefab = new NetworkPrefabRef("2fd6322820ef0704da78b87f6a5401f1");
 
     [SerializeField]
     private NetworkPrefabRef _playerControllerPrefab;

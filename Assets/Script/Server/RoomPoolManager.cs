@@ -66,7 +66,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     private Coroutine? _topUpRoutine;
 
     [SerializeField]
-    private NetworkObject? _quickMatchClientPrefab;
+    private NetworkPrefabRef _quickMatchClientPrefab;
 
     [SerializeField]
     private NetworkPrefabRef _quickMatchPlayerControllerPrefab;
@@ -83,7 +83,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         public NetworkObject? QuickMatchClientInstance;
     }
 
-    public void SetQuickMatchClientPrefab(NetworkObject? prefab)
+    public void SetQuickMatchClientPrefab(NetworkPrefabRef prefab)
     {
         _quickMatchClientPrefab = prefab;
     }
@@ -175,7 +175,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             return;
         }
 
-        var configuredIp = _serverConfig.PublicIpAddress;
+        var configuredIp = "";
 
         if (string.IsNullOrWhiteSpace(configuredIp))
         {
@@ -292,7 +292,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         runner.AddCallbacks(this);
 
         QuickMatchServerCallbacks? quickMatchCallbacks = null;
-        if (_quickMatchClientPrefab != null)
+        if (_quickMatchClientPrefab.IsValid)
         {
             quickMatchCallbacks = go.AddComponent<QuickMatchServerCallbacks>();
             quickMatchCallbacks.SetPlayerControllerPrefab(_quickMatchPlayerControllerPrefab);
@@ -341,7 +341,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             var roomIndex = _nextRoomIndex++;
             NetworkObject? quickMatchInstance = null;
 
-            if (_quickMatchClientPrefab != null)
+            if (_quickMatchClientPrefab.IsValid)
             {
                 try
                 {
@@ -479,7 +479,10 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     {
         return _rooms.Values.Count(r => r.PlayerCount == 0);
     }
-
+    private int CountPlayerRoomsNotFull()
+    {
+        return _rooms.Values.Count(r => r.PlayerCount != 3);
+    }
     private string GenerateRoomName()
     {
         var guid = Guid.NewGuid().ToString("N").Substring(0, 8);
@@ -629,7 +632,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                 Debug.Log($"🚪 Room '{entry.Name}' is full.");
             }
 
-            var emptyRoomCount = CountEmptyRooms();
+            var emptyRoomCount = CountPlayerRoomsNotFull();
             if (_topUpRoutine == null && emptyRoomCount < _targetEmptyRooms)
             {
                 _topUpRoutine = StartCoroutine(TopUpRoomsCoroutine());

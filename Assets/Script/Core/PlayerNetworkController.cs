@@ -17,6 +17,8 @@ public class PlayerNetworkController : NetworkBehaviour
 
     internal static QuickMatchClient.QuickMatchTicket LocalPendingSession => Local?._pendingSession ?? default;
 
+    internal bool HasQuickMatchService => ResolveQuickMatchClient() != null;
+
     public override void Spawned()
     {
         base.Spawned();
