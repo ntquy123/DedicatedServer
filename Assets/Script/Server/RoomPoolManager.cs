@@ -432,7 +432,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                 if (quickMatchInstance != null)
                 {
                     quickMatchInstance.gameObject.name = $"Room_{entry.Index}_{roomName}";
-                    AttachNetworkObjectToRoomScene(quickMatchInstance, entry, fallbackToDontDestroyOnLoad: true);
+                    AttachNetworkObjectToRoomScene(quickMatchInstance, entry, fallbackToDontDestroyOnLoad: true, parentUnderRoomRoot: false);
                 }
             }
 
@@ -673,7 +673,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         Debug.Log($"🌐 Loaded network scene '{_networkSceneName}' for room '{entry.Name}'.");
     }
 
-    private void AttachNetworkObjectToRoomScene(NetworkObject networkObject, RoomEntry entry, bool fallbackToDontDestroyOnLoad)
+    private void AttachNetworkObjectToRoomScene(NetworkObject networkObject, RoomEntry entry, bool fallbackToDontDestroyOnLoad, bool parentUnderRoomRoot = true)
     {
         if (networkObject == null)
         {
@@ -694,7 +694,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                 Debug.LogWarning($"⚠️ Unable to move '{go.name}' into scene '{targetScene.name}': {ex.Message}");
             }
 
-            if (entry.NetworkSceneRoot != null)
+            if (parentUnderRoomRoot && entry.NetworkSceneRoot != null)
             {
                 go.transform.SetParent(entry.NetworkSceneRoot, false);
             }
