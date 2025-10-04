@@ -7,14 +7,16 @@ using System.Threading;
 using Fusion;
 using Fusion.Photon.Realtime;
 using Fusion.Sockets;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 {
     public static RoomPoolManager? Instance { get; private set; }
 
     [SerializeField]
-    private int _targetEmptyRooms = 3;
+    private int _targetEmptyRooms = 1;
 
     [SerializeField]
     private int _maxPlayersPerRoom = 3;
@@ -24,6 +26,9 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
     [SerializeField]
     private ServerConfig? _serverConfig;
+
+    [SerializeField]
+    private string _networkSceneName = string.Empty;
 
     private readonly Dictionary<NetworkRunner, RoomEntry> _rooms = new();
     private readonly HashSet<NetworkRunner> _shutdownInProgress = new();
@@ -81,6 +86,9 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         public ushort Port;
         public bool IsReserved;
         public NetworkObject? QuickMatchClientInstance;
+        public SceneRef NetworkSceneRef;
+        public Scene NetworkScene;
+        public Transform? NetworkSceneRoot;
     }
 
     public void SetQuickMatchClientPrefab(NetworkPrefabRef prefab)
@@ -147,7 +155,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     {
         if (photonSettings == null) throw new ArgumentNullException(nameof(photonSettings));
 
-        ResolvePublicIpAddress();
+        //ResolvePublicIpAddress();
 
         _customPhotonSettings = photonSettings;
         _basePort = basePort;
@@ -257,7 +265,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
         try
         {
-            while (CountEmptyRooms() < _targetEmptyRooms)
+            while (CountPlayerRoomsNotFull() < 1)
             {
                 yield return CreateRoomCoroutine();
             }
@@ -339,21 +347,6 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         if (result.Ok)
         {
             var roomIndex = _nextRoomIndex++;
-            NetworkObject? quickMatchInstance = null;
-
-            if (_quickMatchClientPrefab.IsValid)
-            {
-                try
-                {
-                    quickMatchInstance = runner.Spawn(_quickMatchClientPrefab, Vector3.zero, Quaternion.identity);
-                    DontDestroyOnLoad(quickMatchInstance.gameObject);
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"❌ Failed to spawn quick match client instance for room '{roomName}': {ex}");
-                }
-            }
-
             var entry = new RoomEntry
             {
                 Index = roomIndex,
@@ -362,19 +355,58 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                 PlayerCount = 0,
                 LastEmptyUtc = DateTime.UtcNow,
                 Port = port,
-                QuickMatchClientInstance = quickMatchInstance
+                QuickMatchClientInstance = null,
+                NetworkSceneRef = default,
+                NetworkScene = default,
+                NetworkSceneRoot = null
             };
 
-            if (quickMatchInstance != null)
+            yield return SetupNetworkSceneCoroutine(entry, runner, sceneManager);
+
+            NetworkObject? quickMatchInstance = null;
+
+            if (_quickMatchClientPrefab.IsValid)
             {
-                quickMatchInstance.gameObject.name = $"Room_{entry.Index}_{roomName}";
-                quickMatchInstance.transform.SetParent(null);
+                Scene previousActiveScene = SceneManager.GetActiveScene();
+                var targetScene = entry.NetworkScene;
+                var hasTargetScene = targetScene.IsValid() && targetScene.isLoaded;
+                var activeSceneChanged = false;
+
+                try
+                {
+                    if (hasTargetScene && previousActiveScene != targetScene)
+                    {
+                        SceneManager.SetActiveScene(targetScene);
+                        activeSceneChanged = true;
+                    }
+
+                    quickMatchInstance = runner.Spawn(_quickMatchClientPrefab, Vector3.zero, Quaternion.identity);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"❌ Failed to spawn quick match client instance for room '{roomName}': {ex}");
+                }
+                finally
+                {
+                    if (activeSceneChanged)
+                    {
+                        SceneManager.SetActiveScene(previousActiveScene);
+                    }
+                }
+
+                if (quickMatchInstance != null)
+                {
+                    quickMatchInstance.gameObject.name = $"Room_{entry.Index}_{roomName}";
+                    AttachNetworkObjectToRoomScene(quickMatchInstance, entry, fallbackToDontDestroyOnLoad: true);
+                }
             }
+
+            entry.QuickMatchClientInstance = quickMatchInstance;
 
             _rooms[runner] = entry;
             if (quickMatchCallbacks != null)
             {
-                quickMatchCallbacks.Initialise(entry.Index, entry.Name, quickMatchInstance);
+                quickMatchCallbacks.Initialise(entry.Index, entry.Name, quickMatchInstance, entry.NetworkScene, entry.NetworkSceneRoot);
                 _quickMatchServerCallbacks[runner] = quickMatchCallbacks;
             }
 
@@ -391,6 +423,253 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             }
             Destroy(go);
         }
+    }
+
+    private IEnumerator SetupNetworkSceneCoroutine(RoomEntry entry, NetworkRunner runner, NetworkSceneManagerDefault sceneManager)
+    {
+        entry.NetworkSceneRef = default;
+        entry.NetworkScene = default;
+        entry.NetworkSceneRoot = null;
+
+        if (sceneManager == null)
+        {
+            yield break;
+        }
+
+        if (string.IsNullOrWhiteSpace(_networkSceneName))
+        {
+            yield break;
+        }
+
+        SceneRef sceneRef;
+        try
+        {
+            sceneRef = sceneManager.GetSceneRef(_networkSceneName);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"❌ Unable to resolve scene reference for '{_networkSceneName}' in room '{entry.Name}': {ex}");
+            yield break;
+        }
+
+        if (!sceneRef.IsValid)
+        {
+            Debug.LogWarning($"⚠️ Scene reference for '{_networkSceneName}' is invalid. Skipping additive load for room '{entry.Name}'.");
+            yield break;
+        }
+
+        entry.NetworkSceneRef = sceneRef;
+
+        NetworkSceneAsyncOp loadOperation;
+        try
+        {
+            // File: RoomPoolManager.cs (Dòng 468/469)
+            var loadParameters = new NetworkLoadSceneParameters()
+            {
+                // Sửa lỗi: Đổi tên thuộc tính
+                //LoadSceneMode = LoadSceneMode.Additive,        // Thay thế SceneMode
+                // LocalPhysics = LocalPhysicsMode.None,     // Thay thế PhysicsMode
+                // IsActiveOnLoad = true,
+            };
+
+            // Vẫn giữ cách gọi LoadScene đã sửa ở lần trước
+            loadOperation = runner.SceneManager.LoadScene(sceneRef, loadParameters);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"❌ Failed to request load of network scene '{_networkSceneName}' for room '{entry.Name}': {ex}");
+            entry.NetworkSceneRef = default;
+            yield break;
+        }
+
+        if (loadOperation.IsValid)
+        {
+            while (!loadOperation.IsDone)
+            {
+                yield return null;
+            }
+
+            if (loadOperation.Error != null)
+            {
+                Debug.LogError($"❌ Loading network scene '{_networkSceneName}' for room '{entry.Name}' failed: {loadOperation.Error.Message}");
+                entry.NetworkSceneRef = default;
+                yield break;
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"⚠️ LoadScene returned an invalid operation for scene '{_networkSceneName}' in room '{entry.Name}'.");
+        }
+
+        var loadedScene = SceneManager.GetSceneByName(_networkSceneName);
+        if (!loadedScene.IsValid() || !loadedScene.isLoaded)
+        {
+            Debug.LogWarning($"⚠️ Network scene '{_networkSceneName}' was not found or not loaded for room '{entry.Name}'.");
+            entry.NetworkSceneRef = default;
+            yield break;
+        }
+
+        entry.NetworkScene = loadedScene;
+
+        GameObject? rootObject = null;
+        var previousActiveScene = SceneManager.GetActiveScene();
+        var activeSceneChanged = false;
+
+        try
+        {
+            if (previousActiveScene != loadedScene)
+            {
+                SceneManager.SetActiveScene(loadedScene);
+                activeSceneChanged = true;
+            }
+
+            rootObject = new GameObject($"Room_{entry.Index}_{entry.Name}_NetworkRoot");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"⚠️ Failed to create network root for room '{entry.Name}': {ex.Message}");
+        }
+        finally
+        {
+            if (activeSceneChanged)
+            {
+                SceneManager.SetActiveScene(previousActiveScene);
+            }
+        }
+
+        if (rootObject != null)
+        {
+            if (rootObject.scene != loadedScene)
+            {
+                try
+                {
+                    SceneManager.MoveGameObjectToScene(rootObject, loadedScene);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"⚠️ Unable to move root '{rootObject.name}' into scene '{loadedScene.name}': {ex.Message}");
+                }
+            }
+
+            entry.NetworkSceneRoot = rootObject.transform;
+        }
+
+        Debug.Log($"🌐 Loaded network scene '{_networkSceneName}' for room '{entry.Name}'.");
+    }
+
+    private void AttachNetworkObjectToRoomScene(NetworkObject networkObject, RoomEntry entry, bool fallbackToDontDestroyOnLoad)
+    {
+        if (networkObject == null)
+        {
+            return;
+        }
+
+        var go = networkObject.gameObject;
+        var targetScene = entry.NetworkScene;
+
+        if (targetScene.IsValid() && targetScene.isLoaded)
+        {
+            try
+            {
+                SceneManager.MoveGameObjectToScene(go, targetScene);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"⚠️ Unable to move '{go.name}' into scene '{targetScene.name}': {ex.Message}");
+            }
+
+            if (entry.NetworkSceneRoot != null)
+            {
+                go.transform.SetParent(entry.NetworkSceneRoot, false);
+            }
+            else
+            {
+                go.transform.SetParent(null);
+            }
+        }
+        else if (fallbackToDontDestroyOnLoad)
+        {
+            DontDestroyOnLoad(go);
+
+            try
+            {
+                entry.Runner.MakeDontDestroyOnLoad(go);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"⚠️ Unable to mark '{go.name}' as DontDestroyOnLoad via runner: {ex.Message}");
+            }
+        }
+    }
+
+    private IEnumerator UnloadNetworkSceneCoroutine(NetworkRunner runner, RoomEntry entry)
+    {
+        if (entry.NetworkSceneRoot != null)
+        {
+            Destroy(entry.NetworkSceneRoot.gameObject);
+            entry.NetworkSceneRoot = null;
+        }
+
+        var targetScene = entry.NetworkScene;
+        var sceneRef = entry.NetworkSceneRef;
+        var unloadedViaRunner = false;
+
+        if (sceneRef.IsValid && runner != null && runner.SceneManager != null)
+        {
+            NetworkSceneAsyncOp unloadOperation;
+
+            try
+            {
+                unloadOperation = runner.SceneManager.UnloadScene(sceneRef);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"⚠️ Failed to request unload of network scene '{_networkSceneName}' for room '{entry.Name}': {ex.Message}");
+                unloadOperation = default;
+            }
+
+            if (unloadOperation.IsValid)
+            {
+                while (!unloadOperation.IsDone)
+                {
+                    yield return null;
+                }
+
+                if (unloadOperation.Error == null)
+                {
+                    unloadedViaRunner = true;
+                }
+                else
+                {
+                    Debug.LogWarning($"⚠️ Unloading network scene '{_networkSceneName}' for room '{entry.Name}' reported error: {unloadOperation.Error.Message}");
+                }
+            }
+        }
+
+        if (!unloadedViaRunner && targetScene.IsValid() && targetScene.isLoaded)
+        {
+            AsyncOperation? unloadAsync = null;
+
+            try
+            {
+                unloadAsync = SceneManager.UnloadSceneAsync(targetScene);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"⚠️ Unity unload of scene '{targetScene.name}' for room '{entry.Name}' failed: {ex.Message}");
+            }
+
+            if (unloadAsync != null)
+            {
+                while (!unloadAsync.isDone)
+                {
+                    yield return null;
+                }
+            }
+        }
+
+        entry.NetworkScene = default;
+        entry.NetworkSceneRef = default;
     }
 
     private IEnumerator ShutdownRoomCoroutine(NetworkRunner runner)
@@ -419,6 +698,8 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             runnerToShutdown.Despawn(entry.QuickMatchClientInstance);
             entry.QuickMatchClientInstance = null;
         }
+
+        yield return UnloadNetworkSceneCoroutine(runnerToShutdown, entry);
 
         if (runnerToShutdown)
         {
@@ -481,7 +762,8 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     }
     private int CountPlayerRoomsNotFull()
     {
-        return _rooms.Values.Count(r => r.PlayerCount != 3);
+        int TotalRoomNotFull = _rooms.Values.Count(r => r.PlayerCount <= 3);
+        return TotalRoomNotFull;
     }
     private string GenerateRoomName()
     {
@@ -522,12 +804,30 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                     Destroy(quickMatchCallbacks);
                 }
             }
+
+            if (entry != null)
+            {
+                if (entry.NetworkSceneRoot != null)
+                {
+                    Destroy(entry.NetworkSceneRoot.gameObject);
+                    entry.NetworkSceneRoot = null;
+                }
+
+                if (entry.NetworkScene.IsValid() && entry.NetworkScene.isLoaded)
+                {
+                    SceneManager.UnloadSceneAsync(entry.NetworkScene);
+                }
+
+                entry.NetworkScene = default;
+                entry.NetworkSceneRef = default;
+            }
             _shutdownInProgress.Remove(runner);
             runner.Shutdown();
             Destroy(runner.gameObject);
         }
 
         _rooms.Clear();
+        _quickMatchServerCallbacks.Clear();
         _shutdownInProgress.Clear();
         _currentOnlinePlayers = 0;
     }
@@ -549,7 +849,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
         _quickMatchQueue.Enqueue(player);
 
-        if (_topUpRoutine == null && CountEmptyRooms() == 0)
+        if (_topUpRoutine == null && CountPlayerRoomsNotFull() == 0)
         {
             _topUpRoutine = StartCoroutine(TopUpRoomsCoroutine());
         }
@@ -654,7 +954,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             Debug.Log($"👤 Player left room '{entry.Name}'. Count={entry.PlayerCount}");
             LogPoolStatus($"Player left {entry.Name}");
 
-            if (_topUpRoutine == null && CountEmptyRooms() < _targetEmptyRooms)
+            if (_topUpRoutine == null && CountPlayerRoomsNotFull() < _targetEmptyRooms)
             {
                 _topUpRoutine = StartCoroutine(TopUpRoomsCoroutine());
             }
@@ -672,6 +972,56 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         {
             AdjustOnlinePlayerCount(-entry.PlayerCount);
             Debug.LogWarning($"⚠️ Runner for room '{entry.Name}' shutdown due to {shutdownReason}");
+            if (_quickMatchServerCallbacks.TryGetValue(runner, out var quickMatchCallbacks))
+            {
+                _quickMatchServerCallbacks.Remove(runner);
+
+                if (runner)
+                {
+                    runner.RemoveCallbacks(quickMatchCallbacks);
+                }
+
+                if (quickMatchCallbacks)
+                {
+                    Destroy(quickMatchCallbacks);
+                }
+            }
+
+            if (entry.QuickMatchClientInstance != null && entry.QuickMatchClientInstance.IsValid && runner)
+            {
+                try
+                {
+                    runner.Despawn(entry.QuickMatchClientInstance);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"⚠️ Failed to despawn quick match client during shutdown of room '{entry.Name}': {ex.Message}");
+                }
+
+                entry.QuickMatchClientInstance = null;
+            }
+
+            if (isActiveAndEnabled)
+            {
+                StartCoroutine(UnloadNetworkSceneCoroutine(runner, entry));
+            }
+            else
+            {
+                if (entry.NetworkSceneRoot != null)
+                {
+                    Destroy(entry.NetworkSceneRoot.gameObject);
+                    entry.NetworkSceneRoot = null;
+                }
+
+                if (entry.NetworkScene.IsValid() && entry.NetworkScene.isLoaded)
+                {
+                    SceneManager.UnloadSceneAsync(entry.NetworkScene);
+                }
+
+                entry.NetworkScene = default;
+                entry.NetworkSceneRef = default;
+            }
+
             Destroy(runner.gameObject);
             _shutdownInProgress.Remove(runner);
             if (_topUpRoutine == null)

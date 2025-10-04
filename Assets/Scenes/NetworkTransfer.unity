@@ -71,18 +71,18 @@ LightmapSettings:
     m_BakeBackend: 1
     m_PVRSampling: 1
     m_PVRDirectSampleCount: 32
-    m_PVRSampleCount: 500
+    m_PVRSampleCount: 512
     m_PVRBounces: 2
-    m_PVREnvironmentSampleCount: 500
+    m_PVREnvironmentSampleCount: 256
     m_PVREnvironmentReferencePointCount: 2048
-    m_PVRFilteringMode: 2
-    m_PVRDenoiserTypeDirect: 0
-    m_PVRDenoiserTypeIndirect: 0
-    m_PVRDenoiserTypeAO: 0
+    m_PVRFilteringMode: 1
+    m_PVRDenoiserTypeDirect: 1
+    m_PVRDenoiserTypeIndirect: 1
+    m_PVRDenoiserTypeAO: 1
     m_PVRFilterTypeDirect: 0
     m_PVRFilterTypeIndirect: 0
     m_PVRFilterTypeAO: 0
-    m_PVREnvironmentMIS: 0
+    m_PVREnvironmentMIS: 1
     m_PVRCulling: 1
     m_PVRFilteringGaussRadiusDirect: 1
     m_PVRFilteringGaussRadiusIndirect: 5
@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &591090712
+--- !u!1 &272281938
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,8 +127,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 591090714}
-  - component: {fileID: 591090713}
+  - component: {fileID: 272281940}
+  - component: {fileID: 272281939}
   m_Layer: 0
   m_Name: roomPoolManager
   m_TagString: Untagged
@@ -136,35 +136,32 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &591090713
+--- !u!114 &272281939
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 591090712}
+  m_GameObject: {fileID: 272281938}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5bae5cf40a203214bb03f7e6c304b27b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _targetEmptyRooms: 1
+  _targetEmptyRooms: 3
   _maxPlayersPerRoom: 3
   _idleShutdownSeconds: 180
-  _serverConfig: {fileID: 11400000, guid: 8d6e29d65bbadc94f8282a889c88f3f5, type: 2}
-  _networkSceneName: NetworkTransfer
   _maxConcurrentPlayers: 18
-  _quickMatchClientPrefab:
-    RawGuidValue: 00000000000000000000000000000000
+  _quickMatchClientPrefab: {fileID: 0}
   _quickMatchPlayerControllerPrefab:
     RawGuidValue: 00000000000000000000000000000000
---- !u!4 &591090714
+--- !u!4 &272281940
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 591090712}
+  m_GameObject: {fileID: 272281938}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -173,7 +170,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &894589577
+--- !u!1 &1106096868
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -181,22 +178,39 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 894589579}
-  - component: {fileID: 894589580}
+  - component: {fileID: 1106096871}
+  - component: {fileID: 1106096870}
   m_Layer: 0
-  m_Name: ServerManager
+  m_Name: NetworkManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &894589579
+--- !u!114 &1106096870
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1106096868}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cf2a0079e2bf20499f1e93c8bd2c0ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _roomPoolManager: {fileID: 272281939}
+  _quickMatchClientPrefab: {fileID: 7622769782467562017, guid: 2fd6322820ef0704da78b87f6a5401f1,
+    type: 3}
+  _playerControllerPrefab:
+    RawGuidValue: e36d9ed127b2dc24198caf86cae2addc
+--- !u!4 &1106096871
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 894589577}
+  m_GameObject: {fileID: 1106096868}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -205,26 +219,9 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &894589580
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 894589577}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3cf2a0079e2bf20499f1e93c8bd2c0ef, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _roomPoolManager: {fileID: 591090713}
-  _quickMatchClientPrefab:
-    RawGuidValue: 2fd6322820ef0704da78b87f6a5401f1
-  _playerControllerPrefab:
-    RawGuidValue: e36d9ed127b2dc24198caf86cae2addc
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 591090714}
-  - {fileID: 894589579}
+  - {fileID: 1106096871}
+  - {fileID: 272281940}

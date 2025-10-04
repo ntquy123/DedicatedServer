@@ -3,14 +3,10 @@ using System.Collections.Generic;
 using Fusion;
 using Fusion.Sockets;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
 {
-    private void Awake()
-    {
-        DontDestroyOnLoad(gameObject);
-    }
-
     [SerializeField]
     private NetworkObject? _quickMatchClientInstance;
 
@@ -24,6 +20,7 @@ public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
     private string _roomName = string.Empty;
 
     private Transform? _roomRoot;
+    private Scene _networkScene;
 
     private readonly Dictionary<PlayerRef, NetworkObject> _playerControllers = new();
 
@@ -31,18 +28,20 @@ public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
     public int RoomIndex => _roomIndex;
     public string RoomName => _roomName;
     private Transform RoomRoot => _roomRoot != null ? _roomRoot : transform;
+    private bool HasNetworkScene => _networkScene.IsValid() && _networkScene.isLoaded;
 
     public void SetPlayerControllerPrefab(NetworkPrefabRef prefab)
     {
         _playerControllerPrefab = prefab;
     }
 
-    public void Initialise(int roomIndex, string roomName, NetworkObject? instance)
+    public void Initialise(int roomIndex, string roomName, NetworkObject? instance, Scene networkScene, Transform? roomRoot)
     {
         _roomIndex = roomIndex;
         _roomName = roomName ?? string.Empty;
         _quickMatchClientInstance = instance;
-        _roomRoot = transform;
+        _networkScene = networkScene;
+        _roomRoot = roomRoot;
     }
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
@@ -55,29 +54,31 @@ public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
 
         NetworkObject? controllerObject = null;
 
+        var hasNetworkScene = HasNetworkScene;
+        var previousActiveScene = SceneManager.GetActiveScene();
+        var activeSceneChanged = false;
+
         try
         {
-            controllerObject = runner.Spawn(_playerControllerPrefab, Vector3.zero, Quaternion.identity, player);
-
-            if (controllerObject != null)
+            if (hasNetworkScene && previousActiveScene != _networkScene)
             {
-                DontDestroyOnLoad(controllerObject.gameObject);
-                try
-                {
-                    runner.MakeDontDestroyOnLoad(controllerObject.gameObject);
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogWarning($"⚠️ Unable to mark player controller as DontDestroyOnLoad via runner: {ex.Message}");
-                }
-
-                Debug.Log($"{player} Vào phòng thành công. đã spawn xong input điều khiển");
+                SceneManager.SetActiveScene(_networkScene);
+                activeSceneChanged = true;
             }
+
+            controllerObject = runner.Spawn(_playerControllerPrefab, Vector3.zero, Quaternion.identity, player);
         }
         catch (Exception ex)
         {
             Debug.LogError($"❌ Failed to spawn player controller for player {player}: {ex}");
             return;
+        }
+        finally
+        {
+            if (activeSceneChanged)
+            {
+                SceneManager.SetActiveScene(previousActiveScene);
+            }
         }
 
         if (controllerObject == null)
@@ -86,10 +87,47 @@ public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
             return;
         }
 
+        var movedToNetworkScene = false;
+
+        if (hasNetworkScene)
+        {
+            try
+            {
+                SceneManager.MoveGameObjectToScene(controllerObject.gameObject, _networkScene);
+                movedToNetworkScene = true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"⚠️ Unable to move controller for player {player} into network scene '{_networkScene.name}': {ex.Message}");
+            }
+        }
+
+        if (!movedToNetworkScene)
+        {
+            DontDestroyOnLoad(controllerObject.gameObject);
+
+            try
+            {
+                runner.MakeDontDestroyOnLoad(controllerObject.gameObject);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"⚠️ Unable to mark player controller as DontDestroyOnLoad via runner: {ex.Message}");
+            }
+        }
+
         runner.SetPlayerObject(player, controllerObject);
 
         var playerLabel = DerivePlayerLabel(runner, player);
-        controllerObject.transform.SetParent(RoomRoot, worldPositionStays: false);
+        if (movedToNetworkScene)
+        {
+            var targetParent = _roomRoot != null ? _roomRoot : null;
+            controllerObject.transform.SetParent(targetParent, worldPositionStays: false);
+        }
+        else
+        {
+            controllerObject.transform.SetParent(RoomRoot, worldPositionStays: false);
+        }
         controllerObject.gameObject.name = $"{playerLabel}_Input";
 
         if (controllerObject.TryGetComponent(out PlayerNetworkController controller))
@@ -101,6 +139,7 @@ public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
             Debug.LogWarning("Spawned player controller is missing the PlayerNetworkController component.");
         }
 
+        Debug.Log($"{player} Vào phòng thành công. đã spawn xong input điều khiển");
         _playerControllers[player] = controllerObject;
     }
 
@@ -167,6 +206,8 @@ public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
     public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason)
     {
         _quickMatchClientInstance = null;
+        _networkScene = default;
+        _roomRoot = null;
 
         foreach (var controller in _playerControllers.Values)
         {
