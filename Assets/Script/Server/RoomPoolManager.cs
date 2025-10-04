@@ -520,7 +520,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         {
             var remainingTimeout = 10f;
             const float fallbackDeltaTime = 0.02f;
-
+            Debug.Log("--- Bắt đầu chờ tải cảnh ---");
             while (!loadOperation.IsDone && remainingTimeout > 0f)
             {
                 yield return null;
@@ -534,7 +534,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
                 remainingTimeout -= Mathf.Max(deltaTime, 0f);
             }
-
+            Debug.Log($"--- Chờ tải cảnh kết thúc. IsDone={loadOperation.IsDone} ---");
             if (!loadOperation.IsDone)
             {
                 var waitedSeconds = 10f - Mathf.Clamp(remainingTimeout, 0f, 10f);
