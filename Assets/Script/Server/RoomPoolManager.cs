@@ -64,6 +64,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     private string _roomPrefix = "Room";
     private bool _initialised;
     private bool _isCreatingRooms;
+    private bool _lastRoomCreationSucceeded = true;
     private int _nextPortOffset;
     private int _nextRoomIndex;
     private string _resolvedPublicIpAddress = "0.0.0.0";
@@ -268,9 +269,14 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             while (CountPlayerRoomsNotFull() < 1)
             {
                 yield return CreateRoomCoroutine();
+
+                if (!_lastRoomCreationSucceeded)
+                {
+                    break;
+                }
             }
 
-            if (forceLog)
+            if (forceLog && _lastRoomCreationSucceeded)
             {
                 LogPoolStatus("Ensured minimum empty rooms");
             }
@@ -283,6 +289,8 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
     private IEnumerator CreateRoomCoroutine()
     {
+        _lastRoomCreationSucceeded = false;
+
         var roomName = GenerateRoomName();
         var port = (ushort)(_basePort + _nextPortOffset);
         _nextPortOffset++;
@@ -363,6 +371,31 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
             yield return SetupNetworkSceneCoroutine(entry, runner, sceneManager);
 
+            var hasValidSceneRef = entry.NetworkSceneRef.IsValid;
+            var hasValidScene = entry.NetworkScene.IsValid();
+            var hasSceneLoaded = hasValidScene && entry.NetworkScene.isLoaded;
+
+            if (!hasValidSceneRef || !hasValidScene)
+            {
+                Debug.LogError($"❌ Failed to load network scene '{_networkSceneName}' for room '{roomName}'. SceneRefValid={hasValidSceneRef}, SceneValid={hasValidScene}, SceneLoaded={hasSceneLoaded}.");
+                runner.RemoveCallbacks(this);
+
+                if (quickMatchCallbacks != null)
+                {
+                    runner.RemoveCallbacks(quickMatchCallbacks);
+
+                    if (quickMatchCallbacks is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+
+                    Destroy(quickMatchCallbacks);
+                }
+
+                Destroy(go);
+                yield break;
+            }
+
             NetworkObject? quickMatchInstance = null;
 
             if (_quickMatchClientPrefab.IsValid)
@@ -410,6 +443,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                 _quickMatchServerCallbacks[runner] = quickMatchCallbacks;
             }
 
+            _lastRoomCreationSucceeded = true;
             Debug.Log($"✅ Room '{roomName}' started on port {port}");
         }
         else
