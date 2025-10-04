@@ -266,8 +266,11 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
         try
         {
-            while (CountPlayerRoomsNotFull() < 1)
+            int roomsToCreate = _targetEmptyRooms - CountPlayerRoomsNotFull();
+
+            for (int i = 0; i < 1; i++)
             {
+                yield return new WaitForSeconds(5f);
                 yield return CreateRoomCoroutine();
 
                 if (!_lastRoomCreationSucceeded)
@@ -521,19 +524,20 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             var remainingTimeout = 10f;
             const float fallbackDeltaTime = 0.02f;
             Debug.Log("--- Bắt đầu chờ tải cảnh ---");
-            while (!loadOperation.IsDone && remainingTimeout > 0f)
-            {
-                yield return null;
+            yield return new WaitUntil(() => loadOperation.IsDone);
+            //while (!loadOperation.IsDone && remainingTimeout > 0f)
+            //{
+            //    yield return null;
 
-                var deltaTime = Time.unscaledDeltaTime;
+            //    var deltaTime = Time.unscaledDeltaTime;
 
-                if (float.IsNaN(deltaTime) || float.IsInfinity(deltaTime))
-                {
-                    deltaTime = fallbackDeltaTime;
-                }
+            //    if (float.IsNaN(deltaTime) || float.IsInfinity(deltaTime))
+            //    {
+            //        deltaTime = fallbackDeltaTime;
+            //    }
 
-                remainingTimeout -= Mathf.Max(deltaTime, 0f);
-            }
+            //    remainingTimeout -= Mathf.Max(deltaTime, 0f);
+            //}
             Debug.Log($"--- Chờ tải cảnh kết thúc. IsDone={loadOperation.IsDone} ---");
             if (!loadOperation.IsDone)
             {
@@ -862,7 +866,8 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     {
         try
         {
-            yield return EnsureMinimumEmptyRoomsCoroutine();
+            //yield return EnsureMinimumEmptyRoomsCoroutine();
+            yield return null;
         }
         finally
         {
