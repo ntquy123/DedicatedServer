@@ -495,7 +495,6 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         entry.NetworkSceneRef = sceneRef;
 
         NetworkSceneAsyncOp loadOperation;
-        float timeoutAt = 0f;
         try
         {
             // File: RoomPoolManager.cs (Dòng 468/469)
@@ -509,7 +508,6 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
             // Vẫn giữ cách gọi LoadScene đã sửa ở lần trước
             loadOperation = runner.SceneManager.LoadScene(sceneRef, loadParameters);
-            timeoutAt = Time.realtimeSinceStartup + 10f;
         }
         catch (Exception ex)
         {
@@ -520,14 +518,27 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
         if (loadOperation.IsValid)
         {
-            while (!loadOperation.IsDone && Time.realtimeSinceStartup < timeoutAt)
+            var remainingTimeout = 10f;
+            const float fallbackDeltaTime = 0.02f;
+
+            while (!loadOperation.IsDone && remainingTimeout > 0f)
             {
                 yield return null;
+
+                var deltaTime = Time.unscaledDeltaTime;
+
+                if (float.IsNaN(deltaTime) || float.IsInfinity(deltaTime))
+                {
+                    deltaTime = fallbackDeltaTime;
+                }
+
+                remainingTimeout -= Mathf.Max(deltaTime, 0f);
             }
 
             if (!loadOperation.IsDone)
             {
-                Debug.LogError($"⏱️ Timeout waiting for network scene '{_networkSceneName}' to load for room '{entry.Name}' (Runner={runner}). Initiating unload to cancel partial load.");
+                var waitedSeconds = 10f - Mathf.Clamp(remainingTimeout, 0f, 10f);
+                Debug.LogError($"⏱️ Timeout waiting for network scene '{_networkSceneName}' to load for room '{entry.Name}' (Runner={runner}) after ~{waitedSeconds:F2}s. Initiating unload to cancel partial load.");
 
                 NetworkSceneAsyncOp unloadOperation = default;
                 bool unloadRequested = false;
