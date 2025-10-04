@@ -461,6 +461,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         entry.NetworkSceneRef = sceneRef;
 
         NetworkSceneAsyncOp loadOperation;
+        float timeoutAt = 0f;
         try
         {
             // File: RoomPoolManager.cs (Dòng 468/469)
@@ -474,6 +475,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
             // Vẫn giữ cách gọi LoadScene đã sửa ở lần trước
             loadOperation = runner.SceneManager.LoadScene(sceneRef, loadParameters);
+            timeoutAt = Time.realtimeSinceStartup + 10f;
         }
         catch (Exception ex)
         {
@@ -484,9 +486,16 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
         if (loadOperation.IsValid)
         {
-            while (!loadOperation.IsDone)
+            while (!loadOperation.IsDone && Time.realtimeSinceStartup < timeoutAt)
             {
                 yield return null;
+            }
+
+            if (!loadOperation.IsDone)
+            {
+                Debug.LogError($"⏱️ Timeout waiting for network scene '{_networkSceneName}' to load for room '{entry.Name}' (Runner={runner}).");
+                entry.NetworkSceneRef = default;
+                yield break;
             }
 
             if (loadOperation.Error != null)
