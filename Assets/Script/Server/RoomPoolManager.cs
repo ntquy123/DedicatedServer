@@ -527,7 +527,67 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
             if (!loadOperation.IsDone)
             {
-                Debug.LogError($"⏱️ Timeout waiting for network scene '{_networkSceneName}' to load for room '{entry.Name}' (Runner={runner}).");
+                Debug.LogError($"⏱️ Timeout waiting for network scene '{_networkSceneName}' to load for room '{entry.Name}' (Runner={runner}). Initiating unload to cancel partial load.");
+
+                NetworkSceneAsyncOp unloadOperation = default;
+                bool unloadRequested = false;
+                try
+                {
+                    unloadOperation = sceneManager.UnloadScene(sceneRef);
+                    unloadRequested = unloadOperation.IsValid;
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"❌ Failed to request unload of timed-out scene '{_networkSceneName}' for room '{entry.Name}': {ex}");
+                }
+
+                if (unloadRequested)
+                {
+                    Debug.Log($"♻️ Waiting for unload of timed-out scene '{_networkSceneName}' for room '{entry.Name}'.");
+                    while (!unloadOperation.IsDone)
+                    {
+                        yield return null;
+                    }
+
+                    if (unloadOperation.Error != null)
+                    {
+                        Debug.LogError($"❌ Unloading timed-out scene '{_networkSceneName}' for room '{entry.Name}' failed: {unloadOperation.Error.Message}");
+                    }
+                    else
+                    {
+                        Debug.Log($"✅ Successfully unloaded timed-out scene '{_networkSceneName}' for room '{entry.Name}'.");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"⚠️ Unable to unload timed-out scene '{_networkSceneName}' via NetworkSceneManager. Falling back to SceneManager.UnloadSceneAsync.");
+
+                    AsyncOperation? unloadAsync = null;
+                    try
+                    {
+                        unloadAsync = SceneManager.UnloadSceneAsync(_networkSceneName);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogError($"❌ Fallback unload of timed-out scene '{_networkSceneName}' for room '{entry.Name}' failed to start: {ex}");
+                    }
+
+                    if (unloadAsync != null)
+                    {
+                        Debug.Log($"♻️ Waiting for fallback unload of timed-out scene '{_networkSceneName}' for room '{entry.Name}'.");
+                        while (!unloadAsync.isDone)
+                        {
+                            yield return null;
+                        }
+
+                        Debug.Log($"✅ Fallback unload completed for timed-out scene '{_networkSceneName}' in room '{entry.Name}'.");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"⚠️ Fallback unload of timed-out scene '{_networkSceneName}' for room '{entry.Name}' could not be started.");
+                    }
+                }
+
                 entry.NetworkSceneRef = default;
                 yield break;
             }
