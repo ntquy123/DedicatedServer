@@ -373,7 +373,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                 NetworkSceneRoot = null
             };
 
-            yield return SetupNetworkSceneCoroutine(entry, runner, sceneManager);
+            /* yield return SetupNetworkSceneCoroutine(entry, runner, sceneManager); */
 
             var hasValidSceneRef = entry.NetworkSceneRef.IsValid;
             var hasValidScene = entry.NetworkScene.IsValid();
@@ -463,7 +463,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         }
     }
 
-    private IEnumerator SetupNetworkSceneCoroutine(RoomEntry entry, NetworkRunner runner, NetworkSceneManagerDefault sceneManager)
+    /* private IEnumerator SetupNetworkSceneCoroutine(RoomEntry entry, NetworkRunner runner, NetworkSceneManagerDefault sceneManager)
     {
         entry.NetworkSceneRef = default;
         entry.NetworkScene = default;
@@ -673,7 +673,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         }
 
         Debug.Log($"🌐 Loaded network scene '{_networkSceneName}' for room '{entry.Name}'.");
-    }
+    } */
 
     private void AttachNetworkObjectToRoomScene(NetworkObject networkObject, RoomEntry entry, bool fallbackToDontDestroyOnLoad, bool parentUnderRoomRoot = true)
     {
