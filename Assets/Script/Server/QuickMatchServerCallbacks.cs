@@ -122,11 +122,11 @@ public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
         if (movedToNetworkScene)
         {
             var targetParent = _roomRoot != null ? _roomRoot : null;
-            controllerObject.transform.SetParent(targetParent, worldPositionStays: false);
+           // controllerObject.transform.SetParent(targetParent, worldPositionStays: false);
         }
         else
         {
-            controllerObject.transform.SetParent(RoomRoot, worldPositionStays: false);
+           // controllerObject.transform.SetParent(RoomRoot, worldPositionStays: false);
         }
         controllerObject.gameObject.name = $"{playerLabel}_Input";
 

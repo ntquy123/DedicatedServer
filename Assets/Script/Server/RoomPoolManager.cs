@@ -28,6 +28,8 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     private ServerConfig? _serverConfig;
 
     [SerializeField]
+    int netWorldBuildIndex = 0;
+    [SerializeField]
     private string _networkSceneName = string.Empty;
 
     private readonly Dictionary<NetworkRunner, RoomEntry> _rooms = new();
@@ -340,13 +342,13 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             // Server báo cáo địa chỉ công cộng cho Client kết nối trên VPS
             //CustomPublicAddress = NetAddress.CreateFromIpPort(_resolvedPublicIpAddress, port),
             SceneManager = sceneManager,
+            Scene = SceneRef.FromIndex(netWorldBuildIndex),
             PlayerCount = _maxPlayersPerRoom,
             CustomPhotonAppSettings = customSettings,
             //ObjectProvider = objectProvider
         };
 
         var startTask = runner.StartGame(args);
-
         while (!startTask.IsCompleted)
         {
             yield return null;
