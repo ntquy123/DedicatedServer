@@ -29,9 +29,6 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
     [SerializeField]
     int netWorldBuildIndex = 0;
-    [SerializeField]
-    private string _networkSceneName = string.Empty;
-
     private readonly Dictionary<NetworkRunner, RoomEntry> _rooms = new();
     private readonly HashSet<NetworkRunner> _shutdownInProgress = new();
     private readonly Queue<PlayerRef> _quickMatchQueue = new();
@@ -373,19 +370,11 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                 NetworkSceneRoot = null
             };
 
-            var sceneRef = SceneRef.FromIndex(netWorldBuildIndex); 
-            var op = runner.LoadScene(sceneRef, LoadSceneMode.Additive);
-            while (!op.IsDone) yield return null;
+            var sceneRef = SceneRef.FromIndex(netWorldBuildIndex);
 
-            //yield return SetupNetworkSceneCoroutine(entry, runner, sceneManager);
-
-            var hasValidSceneRef = entry.NetworkSceneRef.IsValid;
-            var hasValidScene = entry.NetworkScene.IsValid();
-            var hasSceneLoaded = hasValidScene && entry.NetworkScene.isLoaded;
-
-            if (!hasValidSceneRef || !hasValidScene)
+            if (!sceneRef.IsValid)
             {
-                Debug.LogError($"❌ Failed to load network scene '{_networkSceneName}' for room '{roomName}'. SceneRefValid={hasValidSceneRef}, SceneValid={hasValidScene}, SceneLoaded={hasSceneLoaded}.");
+                Debug.LogError($"❌ Failed to resolve network scene for room '{roomName}' using build index {netWorldBuildIndex}.");
                 runner.RemoveCallbacks(this);
 
                 if (quickMatchCallbacks != null)
@@ -404,41 +393,211 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                 yield break;
             }
 
+            entry.NetworkSceneRef = sceneRef;
+
+            var loadOperation = runner.LoadScene(sceneRef, LoadSceneMode.Additive);
+
+            if (!loadOperation.IsValid)
+            {
+                Debug.LogError($"❌ LoadScene returned an invalid operation for network scene (build index {netWorldBuildIndex}) in room '{roomName}'.");
+                runner.RemoveCallbacks(this);
+
+                if (quickMatchCallbacks != null)
+                {
+                    runner.RemoveCallbacks(quickMatchCallbacks);
+
+                    if (quickMatchCallbacks is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+
+                    Destroy(quickMatchCallbacks);
+                }
+
+                Destroy(go);
+                yield break;
+            }
+
+            var remainingTimeout = 10f;
+            var loadTimedOut = false;
+
+            while (!loadOperation.IsDone)
+            {
+                var deltaTime = Time.unscaledDeltaTime;
+
+                if (float.IsNaN(deltaTime) || float.IsInfinity(deltaTime) || deltaTime <= 0f)
+                {
+                    deltaTime = 0.02f;
+                }
+
+                remainingTimeout -= deltaTime;
+
+                if (remainingTimeout <= 0f)
+                {
+                    loadTimedOut = true;
+                    break;
+                }
+
+                yield return null;
+            }
+
+            if (loadTimedOut)
+            {
+                Debug.LogError($"⏱️ Timeout waiting for network scene (build index {netWorldBuildIndex}) to load for room '{roomName}'.");
+                runner.RemoveCallbacks(this);
+
+                if (quickMatchCallbacks != null)
+                {
+                    runner.RemoveCallbacks(quickMatchCallbacks);
+
+                    if (quickMatchCallbacks is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+
+                    Destroy(quickMatchCallbacks);
+                }
+
+                Destroy(go);
+                yield break;
+            }
+
+            if (loadOperation.Error != null)
+            {
+                Debug.LogError($"❌ Loading network scene (build index {netWorldBuildIndex}) for room '{roomName}' failed: {loadOperation.Error.Message}.");
+                runner.RemoveCallbacks(this);
+
+                if (quickMatchCallbacks != null)
+                {
+                    runner.RemoveCallbacks(quickMatchCallbacks);
+
+                    if (quickMatchCallbacks is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+
+                    Destroy(quickMatchCallbacks);
+                }
+
+                Destroy(go);
+                yield break;
+            }
+
+            var loadedScene = SceneManager.GetSceneByBuildIndex(netWorldBuildIndex);
+
+            if (!loadedScene.IsValid() || !loadedScene.isLoaded)
+            {
+                Debug.LogError($"❌ Network scene (build index {netWorldBuildIndex}) for room '{roomName}' did not finish loading correctly.");
+                runner.RemoveCallbacks(this);
+
+                if (quickMatchCallbacks != null)
+                {
+                    runner.RemoveCallbacks(quickMatchCallbacks);
+
+                    if (quickMatchCallbacks is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+
+                    Destroy(quickMatchCallbacks);
+                }
+
+                Destroy(go);
+                yield break;
+            }
+
+            entry.NetworkScene = loadedScene;
+
+            GameObject? rootObject = null;
+            var previousActiveScene = SceneManager.GetActiveScene();
+            var activeSceneChanged = false;
+
+            try
+            {
+                if (previousActiveScene != loadedScene)
+                {
+                    SceneManager.SetActiveScene(loadedScene);
+                    activeSceneChanged = true;
+                }
+
+                rootObject = new GameObject($"Room_{entry.Index}_{entry.Name}_NetworkRoot");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"⚠️ Failed to create network root for room '{entry.Name}': {ex.Message}");
+            }
+            finally
+            {
+                if (activeSceneChanged)
+                {
+                    SceneManager.SetActiveScene(previousActiveScene);
+                }
+            }
+
+            if (rootObject != null)
+            {
+                if (rootObject.scene != loadedScene)
+                {
+                    try
+                    {
+                        SceneManager.MoveGameObjectToScene(rootObject, loadedScene);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"⚠️ Unable to move network root '{rootObject.name}' into scene '{loadedScene.name}': {ex.Message}");
+                    }
+                }
+
+                entry.NetworkSceneRoot = rootObject.transform;
+            }
+
             NetworkObject? quickMatchInstance = null;
 
             if (_quickMatchClientPrefab.IsValid)
             {
-                Scene previousActiveScene = SceneManager.GetActiveScene();
                 var targetScene = entry.NetworkScene;
-                var hasTargetScene = targetScene.IsValid() && targetScene.isLoaded;
-                var activeSceneChanged = false;
 
-                try
+                if (!targetScene.IsValid() || !targetScene.isLoaded)
                 {
-                    if (hasTargetScene && previousActiveScene != targetScene)
+                    Debug.LogError($"❌ Cannot spawn quick match client instance for room '{roomName}' because the network scene (build index {netWorldBuildIndex}) is not loaded.");
+                }
+                else
+                {
+                    Scene quickMatchPreviousActiveScene = SceneManager.GetActiveScene();
+                    var quickMatchActiveSceneChanged = false;
+
+                    try
                     {
-                        SceneManager.SetActiveScene(targetScene);
-                        activeSceneChanged = true;
+                        if (quickMatchPreviousActiveScene != targetScene)
+                        {
+                            SceneManager.SetActiveScene(targetScene);
+                            quickMatchActiveSceneChanged = true;
+                        }
+
+                        quickMatchInstance = runner.Spawn(_quickMatchClientPrefab, Vector3.zero, Quaternion.identity);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogError($"❌ Failed to spawn quick match client instance for room '{roomName}': {ex}");
+                    }
+                    finally
+                    {
+                        if (quickMatchActiveSceneChanged)
+                        {
+                            SceneManager.SetActiveScene(quickMatchPreviousActiveScene);
+                        }
                     }
 
-                    quickMatchInstance = runner.Spawn(_quickMatchClientPrefab, Vector3.zero, Quaternion.identity);
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"❌ Failed to spawn quick match client instance for room '{roomName}': {ex}");
-                }
-                finally
-                {
-                    if (activeSceneChanged)
+                    if (quickMatchInstance != null)
                     {
-                        SceneManager.SetActiveScene(previousActiveScene);
-                    }
-                }
+                        quickMatchInstance.gameObject.name = $"Room_{entry.Index}_{roomName}";
+                        AttachNetworkObjectToRoomScene(quickMatchInstance, entry, fallbackToDontDestroyOnLoad: false, parentUnderRoomRoot: false);
 
-                if (quickMatchInstance != null)
-                {
-                    quickMatchInstance.gameObject.name = $"Room_{entry.Index}_{roomName}";
-                    AttachNetworkObjectToRoomScene(quickMatchInstance, entry, fallbackToDontDestroyOnLoad: true, parentUnderRoomRoot: false);
+                        if (quickMatchInstance.gameObject.scene != targetScene)
+                        {
+                            Debug.LogError($"❌ Quick match client for room '{roomName}' was not placed in the expected scene '{targetScene.name}'.");
+                        }
+                    }
                 }
             }
 
@@ -465,218 +624,6 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             }
             Destroy(go);
         }
-    }
-
-    private IEnumerator SetupNetworkSceneCoroutine(RoomEntry entry, NetworkRunner runner, NetworkSceneManagerDefault sceneManager)
-    {
-        entry.NetworkSceneRef = default;
-        entry.NetworkScene = default;
-        entry.NetworkSceneRoot = null;
-
-        if (sceneManager == null)
-        {
-            yield break;
-        }
-
-        if (string.IsNullOrWhiteSpace(_networkSceneName))
-        {
-            yield break;
-        }
-
-        SceneRef sceneRef;
-        try
-        {
-            sceneRef = sceneManager.GetSceneRef(_networkSceneName);
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"❌ Unable to resolve scene reference for '{_networkSceneName}' in room '{entry.Name}': {ex}");
-            yield break;
-        }
-
-        if (!sceneRef.IsValid)
-        {
-            Debug.LogWarning($"⚠️ Scene reference for '{_networkSceneName}' is invalid. Skipping additive load for room '{entry.Name}'.");
-            yield break;
-        }
-
-        entry.NetworkSceneRef = sceneRef;
-
-        NetworkSceneAsyncOp loadOperation;
-        try
-        {
-            // File: RoomPoolManager.cs (Dòng 468/469)
-            var loadParameters = new NetworkLoadSceneParameters()
-            {
-                // Sửa lỗi: Đổi tên thuộc tính
-                //LoadSceneMode = LoadSceneMode.Additive,        // Thay thế SceneMode
-                // LocalPhysics = LocalPhysicsMode.None,     // Thay thế PhysicsMode
-                // IsActiveOnLoad = true,
-            };
-
-            // Vẫn giữ cách gọi LoadScene đã sửa ở lần trước
-            loadOperation = runner.SceneManager.LoadScene(sceneRef, loadParameters);
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"❌ Failed to request load of network scene '{_networkSceneName}' for room '{entry.Name}': {ex}");
-            entry.NetworkSceneRef = default;
-            yield break;
-        }
-
-        if (loadOperation.IsValid)
-        {
-            var remainingTimeout = 10f;
-            const float fallbackDeltaTime = 0.02f;
-            Debug.Log("--- Bắt đầu chờ tải cảnh ---");
-            while (!loadOperation.IsDone && remainingTimeout > 0f)
-            {
-                yield return null;
-
-                var deltaTime = Time.unscaledDeltaTime;
-
-                if (float.IsNaN(deltaTime) || float.IsInfinity(deltaTime))
-                {
-                    deltaTime = fallbackDeltaTime;
-                }
-
-                remainingTimeout -= Mathf.Max(deltaTime, 0f);
-            }
-            Debug.Log($"--- Chờ tải cảnh kết thúc. IsDone={loadOperation.IsDone} ---");
-            if (!loadOperation.IsDone)
-            {
-                var waitedSeconds = 10f - Mathf.Clamp(remainingTimeout, 0f, 10f);
-                Debug.LogError($"⏱️ Timeout waiting for network scene '{_networkSceneName}' to load for room '{entry.Name}' (Runner={runner}) after ~{waitedSeconds:F2}s. Initiating unload to cancel partial load.");
-
-                NetworkSceneAsyncOp unloadOperation = default;
-                bool unloadRequested = false;
-                try
-                {
-                    unloadOperation = sceneManager.UnloadScene(sceneRef);
-                    unloadRequested = unloadOperation.IsValid;
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"❌ Failed to request unload of timed-out scene '{_networkSceneName}' for room '{entry.Name}': {ex}");
-                }
-
-                if (unloadRequested)
-                {
-                    Debug.Log($"♻️ Waiting for unload of timed-out scene '{_networkSceneName}' for room '{entry.Name}'.");
-                    while (!unloadOperation.IsDone)
-                    {
-                        yield return null;
-                    }
-
-                    if (unloadOperation.Error != null)
-                    {
-                        Debug.LogError($"❌ Unloading timed-out scene '{_networkSceneName}' for room '{entry.Name}' failed: {unloadOperation.Error.Message}");
-                    }
-                    else
-                    {
-                        Debug.Log($"✅ Successfully unloaded timed-out scene '{_networkSceneName}' for room '{entry.Name}'.");
-                    }
-                }
-                else
-                {
-                    Debug.LogWarning($"⚠️ Unable to unload timed-out scene '{_networkSceneName}' via NetworkSceneManager. Falling back to SceneManager.UnloadSceneAsync.");
-
-                    AsyncOperation? unloadAsync = null;
-                    try
-                    {
-                        unloadAsync = SceneManager.UnloadSceneAsync(_networkSceneName);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError($"❌ Fallback unload of timed-out scene '{_networkSceneName}' for room '{entry.Name}' failed to start: {ex}");
-                    }
-
-                    if (unloadAsync != null)
-                    {
-                        Debug.Log($"♻️ Waiting for fallback unload of timed-out scene '{_networkSceneName}' for room '{entry.Name}'.");
-                        while (!unloadAsync.isDone)
-                        {
-                            yield return null;
-                        }
-
-                        Debug.Log($"✅ Fallback unload completed for timed-out scene '{_networkSceneName}' in room '{entry.Name}'.");
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"⚠️ Fallback unload of timed-out scene '{_networkSceneName}' for room '{entry.Name}' could not be started.");
-                    }
-                }
-
-                entry.NetworkSceneRef = default;
-                yield break;
-            }
-
-            if (loadOperation.Error != null)
-            {
-                Debug.LogError($"❌ Loading network scene '{_networkSceneName}' for room '{entry.Name}' failed: {loadOperation.Error.Message}");
-                entry.NetworkSceneRef = default;
-                yield break;
-            }
-        }
-        else
-        {
-            Debug.LogWarning($"⚠️ LoadScene returned an invalid operation for scene '{_networkSceneName}' in room '{entry.Name}'.");
-        }
-
-        var loadedScene = SceneManager.GetSceneByName(_networkSceneName);
-        if (!loadedScene.IsValid() || !loadedScene.isLoaded)
-        {
-            Debug.LogWarning($"⚠️ Network scene '{_networkSceneName}' was not found or not loaded for room '{entry.Name}'.");
-            entry.NetworkSceneRef = default;
-            yield break;
-        }
-
-        entry.NetworkScene = loadedScene;
-
-        GameObject? rootObject = null;
-        var previousActiveScene = SceneManager.GetActiveScene();
-        var activeSceneChanged = false;
-
-        try
-        {
-            if (previousActiveScene != loadedScene)
-            {
-                SceneManager.SetActiveScene(loadedScene);
-                activeSceneChanged = true;
-            }
-
-            rootObject = new GameObject($"Room_{entry.Index}_{entry.Name}_NetworkRoot");
-        }
-        catch (Exception ex)
-        {
-            Debug.LogWarning($"⚠️ Failed to create network root for room '{entry.Name}': {ex.Message}");
-        }
-        finally
-        {
-            if (activeSceneChanged)
-            {
-                SceneManager.SetActiveScene(previousActiveScene);
-            }
-        }
-
-        if (rootObject != null)
-        {
-            if (rootObject.scene != loadedScene)
-            {
-                try
-                {
-                    SceneManager.MoveGameObjectToScene(rootObject, loadedScene);
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogWarning($"⚠️ Unable to move root '{rootObject.name}' into scene '{loadedScene.name}': {ex.Message}");
-                }
-            }
-
-            entry.NetworkSceneRoot = rootObject.transform;
-        }
-
-        Debug.Log($"🌐 Loaded network scene '{_networkSceneName}' for room '{entry.Name}'.");
     }
 
     private void AttachNetworkObjectToRoomScene(NetworkObject networkObject, RoomEntry entry, bool fallbackToDontDestroyOnLoad, bool parentUnderRoomRoot = true)
@@ -722,6 +669,10 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                 Debug.LogWarning($"⚠️ Unable to mark '{go.name}' as DontDestroyOnLoad via runner: {ex.Message}");
             }
         }
+        else
+        {
+            Debug.LogError($"❌ Unable to attach '{go.name}' to the network scene for room '{entry.Name}' because the scene is not loaded.");
+        }
     }
 
     private IEnumerator UnloadNetworkSceneCoroutine(NetworkRunner runner, RoomEntry entry)
@@ -734,6 +685,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
 
         var targetScene = entry.NetworkScene;
         var sceneRef = entry.NetworkSceneRef;
+        var sceneLabel = targetScene.IsValid() ? targetScene.name : (sceneRef.IsValid ? sceneRef.ToString() : $"build index {netWorldBuildIndex}");
         var unloadedViaRunner = false;
 
         if (sceneRef.IsValid && runner != null && runner.SceneManager != null)
@@ -746,7 +698,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"⚠️ Failed to request unload of network scene '{_networkSceneName}' for room '{entry.Name}': {ex.Message}");
+                Debug.LogWarning($"⚠️ Failed to request unload of network scene '{sceneLabel}' for room '{entry.Name}': {ex.Message}");
                 unloadOperation = default;
             }
 
@@ -763,7 +715,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                 }
                 else
                 {
-                    Debug.LogWarning($"⚠️ Unloading network scene '{_networkSceneName}' for room '{entry.Name}' reported error: {unloadOperation.Error.Message}");
+                    Debug.LogWarning($"⚠️ Unloading network scene '{sceneLabel}' for room '{entry.Name}' reported error: {unloadOperation.Error.Message}");
                 }
             }
         }
