@@ -94,6 +94,11 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
     public void SetQuickMatchClientPrefab(NetworkPrefabRef prefab)
     {
         _quickMatchClientPrefab = prefab;
+
+        if (!_quickMatchClientPrefab.IsValid)
+        {
+            Debug.LogWarning("Quick match client prefab reference is not valid. Ensure a QuickMatchClient instance exists in the loaded scene.");
+        }
     }
 
     public void SetQuickMatchPlayerControllerPrefab(NetworkPrefabRef prefab)
@@ -309,7 +314,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         runner.AddCallbacks(this);
 
         QuickMatchServerCallbacks? quickMatchCallbacks = null;
-        if (_quickMatchClientPrefab.IsValid)
+        if (_quickMatchPlayerControllerPrefab.IsValid)
         {
             quickMatchCallbacks = go.AddComponent<QuickMatchServerCallbacks>();
             quickMatchCallbacks.SetPlayerControllerPrefab(_quickMatchPlayerControllerPrefab);
@@ -317,7 +322,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         }
         else
         {
-            Debug.LogWarning("Quick match client prefab has not been assigned for server runners.");
+            Debug.LogWarning("Quick match player controller prefab has not been assigned for server runners.");
         }
 
         //var objectProvider = runner.GetComponent<INetworkObjectProvider>();
@@ -550,57 +555,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                 entry.NetworkSceneRoot = rootObject.transform;
             }
 
-            NetworkObject? quickMatchInstance = null;
-
-            if (_quickMatchClientPrefab.IsValid)
-            {
-                var targetScene = entry.NetworkScene;
-
-                if (!targetScene.IsValid() || !targetScene.isLoaded)
-                {
-                    Debug.LogError($"❌ Cannot spawn quick match client instance for room '{roomName}' because the network scene (build index {netWorldBuildIndex}) is not loaded.");
-                }
-                else
-                {
-
-                    Scene quickMatchPreviousActiveScene = SceneManager.GetActiveScene();
-                    var quickMatchActiveSceneChanged = false;
-
-                    try
-                    {
-                        if (quickMatchPreviousActiveScene != targetScene)
-                        {
-                            SceneManager.SetActiveScene(targetScene);
-                            quickMatchActiveSceneChanged = true;
-                        }
-
-                        quickMatchInstance = runner.Spawn(_quickMatchClientPrefab, Vector3.zero, Quaternion.identity);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError($"❌ Failed to spawn quick match client instance for room '{roomName}': {ex}");
-                    }
-                    finally
-                    {
-                        if (quickMatchActiveSceneChanged)
-                        {
-                            SceneManager.SetActiveScene(quickMatchPreviousActiveScene);
-                        }
-                    }
-
-                    if (quickMatchInstance != null)
-                    {
-                        quickMatchInstance.gameObject.name = $"Room_{entry.Index}_{roomName}";
-                        AttachNetworkObjectToRoomScene(quickMatchInstance, entry, fallbackToDontDestroyOnLoad: false, parentUnderRoomRoot: false);
-
-                        if (quickMatchInstance.gameObject.scene != targetScene)
-                        {
-                            Debug.LogError($"❌ Quick match client for room '{roomName}' was not placed in the expected scene '{targetScene.name}'.");
-                        }
-                    }
-                }
-            }
-
+            var quickMatchInstance = ResolveQuickMatchClient(entry);
             entry.QuickMatchClientInstance = quickMatchInstance;
 
             _rooms[runner] = entry;
@@ -673,6 +628,51 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         {
             Debug.LogError($"❌ Unable to attach '{go.name}' to the network scene for room '{entry.Name}' because the scene is not loaded.");
         }
+    }
+
+    private NetworkObject? ResolveQuickMatchClient(RoomEntry entry)
+    {
+        var targetScene = entry.NetworkScene;
+
+        if (!targetScene.IsValid() || !targetScene.isLoaded)
+        {
+            Debug.LogWarning($"⚠️ Cannot resolve quick match client for room '{entry.Name}' because the network scene is not loaded.");
+            return null;
+        }
+
+        var quickMatchObject = FindQuickMatchClientInScene(targetScene);
+
+        if (quickMatchObject == null)
+        {
+            Debug.LogWarning($"⚠️ Unable to locate a QuickMatchClient instance for room '{entry.Name}' in scene '{targetScene.name}'. Ensure the scene contains an active QuickMatchClient network object.");
+            return null;
+        }
+
+        return quickMatchObject;
+    }
+
+    private NetworkObject? FindQuickMatchClientInScene(Scene targetScene)
+    {
+        foreach (var root in targetScene.GetRootGameObjects())
+        {
+            var quickMatch = root.GetComponentInChildren<QuickMatchClient>(includeInactive: true);
+
+            if (quickMatch == null)
+            {
+                continue;
+            }
+
+            var networkObject = quickMatch.Object != null && quickMatch.Object.IsValid
+                ? quickMatch.Object
+                : quickMatch.GetComponent<NetworkObject>();
+
+            if (networkObject != null && networkObject.IsValid)
+            {
+                return networkObject;
+            }
+        }
+
+        return null;
     }
 
     private IEnumerator UnloadNetworkSceneCoroutine(NetworkRunner runner, RoomEntry entry)
