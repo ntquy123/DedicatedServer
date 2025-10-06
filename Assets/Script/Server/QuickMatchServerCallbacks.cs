@@ -52,17 +52,23 @@ public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
             return;
         }
 
+        if (!HasNetworkScene)
+        {
+            Debug.LogError($"❌ Cannot spawn player controller for player {player} because the network scene for room '{_roomName}' is not loaded.");
+            return;
+        }
+
         NetworkObject? controllerObject = null;
 
-        var hasNetworkScene = HasNetworkScene;
+        var targetScene = _networkScene;
         var previousActiveScene = SceneManager.GetActiveScene();
         var activeSceneChanged = false;
 
         try
         {
-            if (hasNetworkScene && previousActiveScene != _networkScene)
+            if (previousActiveScene != targetScene)
             {
-                SceneManager.SetActiveScene(_networkScene);
+                SceneManager.SetActiveScene(targetScene);
                 activeSceneChanged = true;
             }
 
@@ -87,47 +93,25 @@ public class QuickMatchServerCallbacks : MonoBehaviour, INetworkRunnerCallbacks
             return;
         }
 
-        var movedToNetworkScene = false;
-
-        if (hasNetworkScene)
+        if (controllerObject.gameObject.scene != targetScene)
         {
             try
             {
-                SceneManager.MoveGameObjectToScene(controllerObject.gameObject, _networkScene);
-                movedToNetworkScene = true;
+                SceneManager.MoveGameObjectToScene(controllerObject.gameObject, targetScene);
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"⚠️ Unable to move controller for player {player} into network scene '{_networkScene.name}': {ex.Message}");
-            }
-        }
-
-        if (!movedToNetworkScene)
-        {
-            DontDestroyOnLoad(controllerObject.gameObject);
-
-            try
-            {
-                runner.MakeDontDestroyOnLoad(controllerObject.gameObject);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"⚠️ Unable to mark player controller as DontDestroyOnLoad via runner: {ex.Message}");
+                Debug.LogError($"❌ Unable to move controller for player {player} into network scene '{targetScene.name}': {ex.Message}");
+                runner.Despawn(controllerObject);
+                return;
             }
         }
 
         runner.SetPlayerObject(player, controllerObject);
 
         var playerLabel = DerivePlayerLabel(runner, player);
-        if (movedToNetworkScene)
-        {
-            var targetParent = _roomRoot != null ? _roomRoot : null;
-           // controllerObject.transform.SetParent(targetParent, worldPositionStays: false);
-        }
-        else
-        {
-           // controllerObject.transform.SetParent(RoomRoot, worldPositionStays: false);
-        }
+        // var targetParent = _roomRoot != null ? _roomRoot : null;
+        // controllerObject.transform.SetParent(targetParent, worldPositionStays: false);
         controllerObject.gameObject.name = $"{playerLabel}_Input";
 
         if (controllerObject.TryGetComponent(out PlayerNetworkController controller))
