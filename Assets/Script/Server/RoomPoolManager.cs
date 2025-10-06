@@ -396,7 +396,6 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             entry.NetworkSceneRef = sceneRef;
 
             var loadOperation = runner.LoadScene(sceneRef, LoadSceneMode.Additive);
-
             if (!loadOperation.IsValid)
             {
                 Debug.LogError($"❌ LoadScene returned an invalid operation for network scene (build index {netWorldBuildIndex}) in room '{roomName}'.");
@@ -563,15 +562,16 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                 }
                 else
                 {
-                    Scene previousActiveScene = SceneManager.GetActiveScene();
-                    var activeSceneChanged = false;
+
+                    Scene quickMatchPreviousActiveScene = SceneManager.GetActiveScene();
+                    var quickMatchActiveSceneChanged = false;
 
                     try
                     {
-                        if (previousActiveScene != targetScene)
+                        if (quickMatchPreviousActiveScene != targetScene)
                         {
                             SceneManager.SetActiveScene(targetScene);
-                            activeSceneChanged = true;
+                            quickMatchActiveSceneChanged = true;
                         }
 
                         quickMatchInstance = runner.Spawn(_quickMatchClientPrefab, Vector3.zero, Quaternion.identity);
@@ -582,9 +582,9 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                     }
                     finally
                     {
-                        if (activeSceneChanged)
+                        if (quickMatchActiveSceneChanged)
                         {
-                            SceneManager.SetActiveScene(previousActiveScene);
+                            SceneManager.SetActiveScene(quickMatchPreviousActiveScene);
                         }
                     }
 
