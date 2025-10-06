@@ -46,6 +46,7 @@ public class QuickMatchClient : NetworkBehaviour
 
     public override void Spawned()
     {
+        Debug.Log($"Kiểm tra điều khiển quản lý tìm trận:  {(Object.HasStateAuthority ? "Server" : "Client")}  id={Object.Id}");
         base.Spawned();
 
         if (_isPersistent)
@@ -66,7 +67,7 @@ public class QuickMatchClient : NetworkBehaviour
             Debug.LogWarning($"⚠️ Unable to mark QuickMatchClient as DontDestroyOnLoad via runner: {ex.Message}");
         }
     }
-
+ 
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
         base.Despawned(runner, hasState);
