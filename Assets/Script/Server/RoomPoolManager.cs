@@ -342,7 +342,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
             // Server báo cáo địa chỉ công cộng cho Client kết nối trên VPS
             //CustomPublicAddress = NetAddress.CreateFromIpPort(_resolvedPublicIpAddress, port),
             SceneManager = sceneManager,
-            Scene = SceneRef.FromIndex(netWorldBuildIndex),
+           // Scene = SceneRef.FromIndex(netWorldBuildIndex),
             PlayerCount = _maxPlayersPerRoom,
             CustomPhotonAppSettings = customSettings,
             //ObjectProvider = objectProvider
@@ -373,7 +373,11 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
                 NetworkSceneRoot = null
             };
 
-            /* yield return SetupNetworkSceneCoroutine(entry, runner, sceneManager); */
+            var sceneRef = SceneRef.FromIndex(netWorldBuildIndex); 
+            var op = runner.LoadScene(sceneRef, LoadSceneMode.Additive);
+            while (!op.IsDone) yield return null;
+
+            //yield return SetupNetworkSceneCoroutine(entry, runner, sceneManager);
 
             var hasValidSceneRef = entry.NetworkSceneRef.IsValid;
             var hasValidScene = entry.NetworkScene.IsValid();
@@ -463,7 +467,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         }
     }
 
-    /* private IEnumerator SetupNetworkSceneCoroutine(RoomEntry entry, NetworkRunner runner, NetworkSceneManagerDefault sceneManager)
+    private IEnumerator SetupNetworkSceneCoroutine(RoomEntry entry, NetworkRunner runner, NetworkSceneManagerDefault sceneManager)
     {
         entry.NetworkSceneRef = default;
         entry.NetworkScene = default;
@@ -673,7 +677,7 @@ public class RoomPoolManager : MonoBehaviour, INetworkRunnerCallbacks
         }
 
         Debug.Log($"🌐 Loaded network scene '{_networkSceneName}' for room '{entry.Name}'.");
-    } */
+    }
 
     private void AttachNetworkObjectToRoomScene(NetworkObject networkObject, RoomEntry entry, bool fallbackToDontDestroyOnLoad, bool parentUnderRoomRoot = true)
     {
