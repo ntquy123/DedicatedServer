@@ -42,37 +42,10 @@ public class QuickMatchClient : NetworkBehaviour
 
     private static readonly Dictionary<PlayerRef, PendingMatch> _pendingMatches = new();
 
-    private bool _isPersistent;
-
     public override void Spawned()
     {
         Debug.Log($"Kiểm tra điều khiển quản lý tìm trận:  {(Object.HasStateAuthority ? "Server" : "Client")}  id={Object.Id}");
         base.Spawned();
-
-        if (_isPersistent)
-        {
-            return;
-        }
-
-        _isPersistent = true;
-
-        DontDestroyOnLoad(gameObject);
-
-        try
-        {
-            Runner?.MakeDontDestroyOnLoad(gameObject);
-        }
-        catch (Exception ex)
-        {
-            Debug.LogWarning($"⚠️ Unable to mark QuickMatchClient as DontDestroyOnLoad via runner: {ex.Message}");
-        }
-    }
- 
-    public override void Despawned(NetworkRunner runner, bool hasState)
-    {
-        base.Despawned(runner, hasState);
-
-        _isPersistent = false;
     }
 
     private class PendingMatch
