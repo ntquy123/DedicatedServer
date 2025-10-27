@@ -9,11 +9,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <RootNamespace></RootNamespace>
-    <ProjectGuid>{A4C0D2C4-C9BB-3F6C-4B4F-5DB77716498B}</ProjectGuid>
+    <RootNamespace>Fusion.Addons.Physics</RootNamespace>
+    <ProjectGuid>{CB068EDB-B501-55D1-DCBB-AF1B6599D34C}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <AssemblyName>Assembly-CSharp</AssemblyName>
+    <AssemblyName>Fusion.Addons.Physics</AssemblyName>
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <BaseDirectory>.</BaseDirectory>
@@ -61,137 +61,24 @@
     <Analyzer Include="D:\Unity\UnityEditor\6000.0.53f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\ChatController.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\GameServerInitializer.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\SysMasLanguage.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\Culi\FireSunCuli.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\MessageModel.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\Addressables\AddressablesHelper.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Player\HandController.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\UI\PopupPlayerUI.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Server\APIManager.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\Server\ModelNetworkSerializable.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\Culi\BallSkill_99000002.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\CancelSaleRequest.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\UI\PopupHelper.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\Json\JsonHelper.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\FusionRequest.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\RewardLocation.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\Inventory\PlayerInventorySchema.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Player\FingerIKController.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\ReadMessageRequest.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\OutOfBoundsChecker.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Server\GameSessionNetWork_Host.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\Inventory\ItemListWrapper.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\LoadingManager.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\LevelUpEffectResponse.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Server\AIGameSession.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\GameManagerNetWork.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\MessageRequestModel.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\FriendRequestModel.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\LuckyDrawModels.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\ServerConfig.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\Culi\BallSkill_99000006.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Server\RoomRunnerHelper.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\BuyItemRequest.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\BallPhysicsSchema.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\PlayerNetworkHandler.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\Physics\BallMeshDeformer.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\UI\FPSDisplay.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Player\RingBallNetworkHandler.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\FloodController.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\UI\SkillIconAttribute.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\ServerMapHelper.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Player\BallServerController.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\LuckyDrawResponse.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\MysteryChestManager.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\RingBall.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\UI\PlayerArrowUI.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Server\NetworkObjectManager.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\IFBall.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\EquipBallRequest.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\UI\ItemInfoPopup.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Server\NetworkInputHandler.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Server\QuickMatchServerCallbacks.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\Culi\BallSkill_99000004_Trap.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\SkillManager.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Player\FingerAnimationController.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\SellItemRequest.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\Culi\BallSkill_99000013.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\MainThreadDispatcher.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\MapSceneConfigManager.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\MapSceneConfig.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Server\ServerLauncher.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\Physics\PhysicsBallHelper.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\SceneLogicConfig.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\ButtonShootPowerBarController.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\PlayerSchema.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\OverGameRequest.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\FriendResponseModel.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\ItemBall.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\MarketItemSchema.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Server\RoomPoolManager.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Server\QuickMatchServer.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\UI\ButtonClickSound.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\RewardRevealController.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Enum.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\RoomManager.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\MarketItemListWrapper.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\UI\ArrowTextHelper.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\ClientGameplayBridge.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\EquipItemRequest.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\Culi\BallSkill_99000004.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\Localization\Language\LocalizedText.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\Culi\BallSkill_99000008.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\UI\SkillHelper.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\UpgradeMaterial.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\ElementalType.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\LuckyDrawManager.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\EffectPlayerSchema.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\RewardItem.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\UI\CircularButton.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\ItemVisualHelper.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\Culi\BallSkill_99000003.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\Player.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\CatalystItem.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\Localization\Language\LocalizationData.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\Culi\BallSkill_99000005.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\AnimatorController.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GameSessionNetworker_Client.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Server\LoadingManagerServer.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\BuyMarketRequest.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\GameOverManager.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\Localization\Language\LocalizationManager.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\Culi\BallSkill_99000011.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Model\LevelUpItemRequest.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\Client\GamePlay\Culi\BallSkill_99000001.cs" />
-    <Compile Include="Assets\MyFusionGame_Shared\Script\System\Helper\UI\NotificationHelper.cs" />
+    <Compile Include="Assets\Photon\FusionAddons\Physics\NetworkRigidbody\NetworkRigidbodyBase\NetworkRigidbodyBase.Render.cs" />
+    <Compile Include="Assets\Photon\FusionAddons\Physics\RunnerSimulatePhysics\RunnerSimulatePhysicsBase.cs" />
+    <Compile Include="Assets\Photon\FusionAddons\Physics\NetworkRigidbody\NetworkRigidbodyBase\NetworkRigidbodyTypes.cs" />
+    <Compile Include="Assets\Photon\FusionAddons\Physics\NetworkRigidbody\NetworkRigidbodyBase\NetworkRigidbody.cs" />
+    <Compile Include="Assets\Photon\FusionAddons\Physics\NetworkRigidbody\NetworkRigidbody3D.cs" />
+    <Compile Include="Assets\Photon\FusionAddons\Physics\NetworkRigidbody\NetworkRigidbodyBase\NetworkRigidbodyBase.cs" />
+    <Compile Include="Assets\Photon\FusionAddons\Physics\RunnerSimulatePhysics\RunnerSimulatePhysicsEnums.cs" />
+    <Compile Include="Assets\Photon\FusionAddons\Physics\NetworkRigidbody\NetworkRigidbodyBase\NetworkRigidbodyBase.Copy.cs" />
+    <Compile Include="Assets\Photon\FusionAddons\Physics\NetworkRigidbody\NetworkRigidbody2D.cs" />
+    <Compile Include="Assets\Photon\FusionAddons\Physics\RunnerSimulatePhysics\RunnerSimulatePhysics2D.cs" />
+    <Compile Include="Assets\Photon\FusionAddons\Physics\NetworkRigidbody\NetworkRigidbodyBase\NetworkRigidbodyBase.Teleport.cs" />
+    <Compile Include="Assets\Photon\FusionAddons\Physics\RunnerSimulatePhysics\RunnerSimulatePhysics3D.cs" />
+    <Compile Include="Assets\Photon\FusionAddons\Physics\RunnerSimulatePhysics\RunnerSimulatePhysicsBaseT.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\Photon\PhotonLibs\netstandard2.0\Photon3Unity3D.xml" />
-    <None Include="Assets\Photon\Fusion\Assemblies\Fusion.Log.dll" />
-    <None Include="Assets\Photon\Fusion\Assemblies\Fusion.Common.dll" />
-    <None Include="Assets\Photon\Fusion\Assemblies\Fusion.Runtime.xml" />
-    <None Include="Assets\Photon\Fusion\Plugins\NanoSockets\NanoSockets\Static\NanoSockets.dll" />
-    <None Include="Assets\Photon\Fusion\Assemblies\Fusion.Sockets.dll" />
-    <None Include="Assets\Photon\Fusion\Assemblies\Fusion.Sockets.xml" />
-    <None Include="Assets\Photon\Fusion\release_history.txt" />
-    <None Include="Assets\Photon\Fusion\Plugins\NanoSockets\NanoSockets\Dynamic\NanoSockets.dll" />
-    <None Include="Assets\Photon\Fusion\Assemblies\Fusion.Runtime.dll" />
-    <None Include="Assets\Photon\Fusion\Plugins\NanoSockets\Metro\NanoSockets.dll" />
-    <None Include="Assets\Photon\PhotonLibs\changes-library.txt" />
-    <None Include="Assets\Photon\Fusion\Plugins\NanoSockets\Metro\x64\libnanosockets.dll" />
-    <None Include="Assets\Photon\Fusion\Plugins\NanoSockets\Metro\x86\libnanosockets.dll" />
-    <None Include="Assets\Photon\PhotonLibs\netstandard2.0\Photon3Unity3D.dll" />
-    <None Include="Assets\Photon\Fusion\Plugins\NanoSockets\Windows\nanosockets.dll" />
-    <None Include="Assets\Photon\Fusion\Assemblies\Fusion.Common.xml" />
-    <None Include="Assets\Photon\Fusion\Assemblies\Fusion.Log.xml" />
-    <None Include="Assets\Photon\Fusion\build_info.txt" />
-    <None Include="Assets\Photon\Fusion\Assemblies\Fusion.Realtime.dll" />
-    <None Include="Assets\Photon\Fusion\Plugins\NanoSockets\Metro\ARM64\libnanosockets.dll" />
-    <None Include="Assets\Photon\Fusion\Plugins\NanoSockets\WebGL\NanoSockets.dll" />
-    <None Include="Assets\Photon\Fusion\Assemblies\Fusion.Realtime.xml" />
-    <None Include="Assets\Photon\Fusion\Plugins\NanoSockets\Metro\ARM\libnanosockets.dll" />
+    <None Include="Assets\Photon\FusionAddons\Physics\physics_build_info.txt" />
+    <None Include="Assets\Photon\FusionAddons\Physics\release_history.txt" />
+    <None Include="Assets\Photon\FusionAddons\Physics\Fusion.Addons.Physics.asmdef" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
@@ -654,12 +541,40 @@
       <HintPath>D:\Unity\UnityEditor\6000.0.53f1\Editor\Data\Managed\UnityEngine\UnityEditor.XRModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEditor.Graphs">
+      <HintPath>D:\Unity\UnityEditor\6000.0.53f1\Editor\Data\Managed\UnityEditor.Graphs.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.WindowsStandalone.Extensions">
+      <HintPath>D:\Unity\UnityEditor\6000.0.53f1\Editor\Data\PlaybackEngines\WindowsStandaloneSupport\UnityEditor.WindowsStandalone.Extensions.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.Android.Extensions">
+      <HintPath>D:\Unity\UnityEditor\6000.0.53f1\Editor\Data\PlaybackEngines\AndroidPlayer\UnityEditor.Android.Extensions.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.LinuxStandalone.Extensions">
+      <HintPath>D:\Unity\UnityEditor\6000.0.53f1\Editor\Data\PlaybackEngines\LinuxStandaloneSupport\UnityEditor.LinuxStandalone.Extensions.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.YamlDotNet">
+      <HintPath>Library\PackageCache\com.unity.visualscripting@6279e2b7c485\Editor\VisualScripting.Core\Dependencies\YamlDotNet\Unity.VisualScripting.YamlDotNet.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="nunit.framework">
       <HintPath>Library\PackageCache\com.unity.ext.nunit@031a54704bff\net40\unity-custom\nunit.framework.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="ReportGeneratorMerged">
       <HintPath>Library\PackageCache\com.unity.testtools.codecoverage@205a02cbcb39\lib\ReportGenerator\ReportGeneratorMerged.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="unityplastic">
+      <HintPath>Library\PackageCache\com.unity.collab-proxy@c854d1f7d97f\Lib\Editor\unityplastic.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Plastic.Antlr3.Runtime">
+      <HintPath>Library\PackageCache\com.unity.collab-proxy@c854d1f7d97f\Lib\Editor\Unity.Plastic.Antlr3.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Fusion.Log">
@@ -682,6 +597,18 @@
       <HintPath>Assets\Photon\Fusion\Assemblies\Fusion.Sockets.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.Plastic.Newtonsoft.Json">
+      <HintPath>Library\PackageCache\com.unity.collab-proxy@c854d1f7d97f\Lib\Editor\Unity.Plastic.Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="log4netPlastic">
+      <HintPath>Library\PackageCache\com.unity.collab-proxy@c854d1f7d97f\Lib\Editor\log4netPlastic.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.IonicZip">
+      <HintPath>Library\PackageCache\com.unity.visualscripting@6279e2b7c485\Editor\VisualScripting.Core\Dependencies\DotNetZip\Unity.VisualScripting.IonicZip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Fusion.Runtime">
       <HintPath>Assets\Photon\Fusion\Assemblies\Fusion.Runtime.dll</HintPath>
       <Private>False</Private>
@@ -696,6 +623,10 @@
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>Library\PackageCache\com.unity.nuget.newtonsoft-json@74deb55db2a0\Runtime\Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.TextureAssets">
+      <HintPath>Library\PackageCache\com.unity.visualscripting@6279e2b7c485\Editor\VisualScripting.Core\EditorAssetResources\Unity.VisualScripting.TextureAssets.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Mono.Cecil">
@@ -1206,112 +1137,8 @@
       <HintPath>Library\ScriptAssemblies\UnityEditor.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Rider.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.Rider.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.VisualScripting.Shared.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Shared.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.VisualScripting.Core.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Core.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Multiplayer.Center.Common">
-      <HintPath>Library\ScriptAssemblies\Unity.Multiplayer.Center.Common.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.TestTools.CodeCoverage.Editor.OpenCover.Mono.Reflection">
-      <HintPath>Library\ScriptAssemblies\Unity.TestTools.CodeCoverage.Editor.OpenCover.Mono.Reflection.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.VisualScripting.Flow.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Flow.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.TextMeshPro">
-      <HintPath>Library\ScriptAssemblies\Unity.TextMeshPro.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.EditorCoroutines.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.EditorCoroutines.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Timeline.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.Timeline.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Timeline">
-      <HintPath>Library\ScriptAssemblies\Unity.Timeline.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.TestTools.CodeCoverage.Editor.OpenCover.Model">
-      <HintPath>Library\ScriptAssemblies\Unity.TestTools.CodeCoverage.Editor.OpenCover.Model.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.VisualScripting.State.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.State.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>Library\ScriptAssemblies\UnityEngine.UI.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.TestTools.CodeCoverage.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.TestTools.CodeCoverage.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Settings.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.Settings.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Toolchain.Win-x86_64-Linux-x86_64">
-      <HintPath>Library\ScriptAssemblies\Unity.Toolchain.Win-x86_64-Linux-x86_64.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.PlasticSCM.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.PlasticSCM.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Multiplayer.Center.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.Multiplayer.Center.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.VisualScripting.SettingsProvider.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.SettingsProvider.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.VisualScripting.State">
-      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.State.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Performance.Profile-Analyzer.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.Performance.Profile-Analyzer.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Sysroot.Linux_x86_64">
-      <HintPath>Library\ScriptAssemblies\Unity.Sysroot.Linux_x86_64.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.TextMeshPro.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.TextMeshPro.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.VisualStudio.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.VisualStudio.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.VisualScripting.Flow">
-      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Flow.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.VisualScripting.Core">
-      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Core.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.SysrootPackage.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.SysrootPackage.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -1319,18 +1146,6 @@
     <ProjectReference Include="Fusion.Unity.csproj">
       <Project>{4FE96923-4118-C3D9-38AD-4EFF121536D4}</Project>
       <Name>Fusion.Unity</Name>
-    </ProjectReference>
-    <ProjectReference Include="Fusion.Addons.Physics.csproj">
-      <Project>{CB068EDB-B501-55D1-DCBB-AF1B6599D34C}</Project>
-      <Name>Fusion.Addons.Physics</Name>
-    </ProjectReference>
-    <ProjectReference Include="Fusion.Addons.Physics.Editor.csproj">
-      <Project>{9055457A-6893-C1B6-D813-C491B46751CD}</Project>
-      <Name>Fusion.Addons.Physics.Editor</Name>
-    </ProjectReference>
-    <ProjectReference Include="Fusion.Unity.Editor.csproj">
-      <Project>{41E972B5-B23A-E4E8-608F-0913D3E34392}</Project>
-      <Name>Fusion.Unity.Editor</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

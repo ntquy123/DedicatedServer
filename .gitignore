@@ -24,6 +24,8 @@ Assets/AddressableAsset/
 Assets/Firebase/
 Assets/Plugins/
 Assets/GeneratedLocalRepo/
+# Bỏ qua thư mục share từ client
+Assets/MyFusionGame_Shared
 # 🔄 Loại bỏ file tạm thời
 MemoryCaptures/
 Recordings/
